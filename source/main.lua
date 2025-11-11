@@ -8,6 +8,14 @@ import 'CoreLibs/ui'
 local pd <const> = playdate
 local gfx <const> = pd.graphics
 
+-- TODO: extract to files
+
+local gardenBackgroundImage = gfx.image.new('images/garden/background')
+function drawGardenBackground()
+    local bgX = (400 - gardenBackgroundImage.width) / 2
+    gardenBackgroundImage:draw(bgX, 0)
+end
+
 ----------------------------------------------------------------------------------
 -- Game Loop
 ----------------------------------------------------------------------------------
@@ -17,4 +25,6 @@ local gfx <const> = pd.graphics
 function pd.update()
     gfx.sprite.update()
     pd.timer.updateTimers()
+
+    drawGardenBackground()
 end

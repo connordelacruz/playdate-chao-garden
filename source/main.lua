@@ -12,6 +12,8 @@ local gfx <const> = pd.graphics
 -- Game Loop
 ----------------------------------------------------------------------------------
 
+-- TODO: scene mgmt: https://www.youtube.com/watch?v=3LoMft137z8
+
 function pd.update()
     gfx.sprite.update()
     pd.timer.updateTimers()

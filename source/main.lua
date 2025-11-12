@@ -5,6 +5,8 @@ import 'CoreLibs/sprites'
 import 'CoreLibs/timer'
 import 'CoreLibs/crank'
 import 'CoreLibs/ui'
+-- Toybox-managed libraries
+import 'toyboxes'
 -- Common stuff
 import 'globals'
 import 'util/state'

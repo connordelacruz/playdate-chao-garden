@@ -25,6 +25,11 @@ function Cursor:init(startX, startY)
     self:setCollideRect(0, 0, self:getSize())
     self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
     -- --------------------------------------------------------------------------------
+    -- Properties
+    -- --------------------------------------------------------------------------------
+    -- Speed of the cursor when moving (px / sec)
+    self.speed = 200
+    -- --------------------------------------------------------------------------------
     -- Initialization
     -- --------------------------------------------------------------------------------
     -- Cursor should appear above most sprites
@@ -32,4 +37,37 @@ function Cursor:init(startX, startY)
 
     self:moveTo(startX, startY)
     self:add()
+end
+
+function Cursor:update()
+    local current, _, _ = pd.getButtonState()
+    local dx = 0
+    local dy = 0
+    -- Determine direction cursor should move
+    if (current & pd.kButtonUp) > 0 then
+        dy -= 1
+    end
+    if (current & pd.kButtonDown) > 0 then
+        dy += 1
+    end
+    if (current & pd.kButtonLeft) > 0 then
+        dx -= 1
+    end
+    if (current & pd.kButtonRight) > 0 then
+        dx += 1
+    end
+
+    -- Handle movement
+    if dx ~= 0 or dy ~=0 then
+        local distance = self.speed * DELTA_TIME
+        -- Divide distance by square root of 2 for diagonal movement
+        if dx ~= 0 and dy ~= 0 then
+            distance = distance / math.sqrt(2)
+        end
+        -- Calculate desired position
+        local targetX = self.x + dx * distance
+        local targetY = self.y + dy * distance
+        -- TODO: keep from going out of bounds
+        self:moveTo(targetX, targetY)
+    end
 end

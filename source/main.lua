@@ -24,7 +24,16 @@ local gfx <const> = pd.graphics
 
 -- TODO: scene mgmt: https://www.youtube.com/watch?v=3LoMft137z8
 
+-- TODO: organize this?
+DELTA_TIME = 0
+
+function updateDeltaTime()
+    DELTA_TIME = pd.getElapsedTime()
+    pd.resetElapsedTime()
+end
+
 function pd.update()
+    updateDeltaTime()
     gfx.sprite.update()
     pd.timer.updateTimers()
 end

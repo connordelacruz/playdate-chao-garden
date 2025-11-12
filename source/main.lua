@@ -10,6 +10,8 @@ import 'toyboxes'
 -- Common stuff
 import 'globals'
 import 'util/state'
+-- Chao
+import 'chao/main'
 -- Garden
 import 'garden/main'
 

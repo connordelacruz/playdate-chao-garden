@@ -9,7 +9,6 @@ class('Chao').extends(gfx.sprite)
 
 function Chao:init(startX, startY)
     Chao.super.init(self)
-
     -- --------------------------------------------------------------------------------
     -- Spritesheet
     -- --------------------------------------------------------------------------------
@@ -21,4 +20,11 @@ function Chao:init(startX, startY)
     self:setCollideRect(0, 0, self.spritesheet[1].width, self.spritesheet[1].height)
     self:moveTo(startX, startY)
     self:add()
+end
+
+function Chao:update()
+    local ms = pd.getCurrentTimeMilliseconds()
+    local spriteIndex = (ms // 500 % #self.spritesheet) + 1
+    print(spriteIndex)
+    self:setImage(self.spritesheet[spriteIndex])
 end

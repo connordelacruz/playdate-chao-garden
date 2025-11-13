@@ -10,27 +10,35 @@ import 'toyboxes'
 -- Common stuff
 import 'globals'
 import 'util/state'
+import 'util/scene-manager'
 -- Chao
 import 'chao/main'
 -- Garden
-import 'garden/main'
+import 'garden/scene'
 
 local pd <const> = playdate
 local gfx <const> = pd.graphics
 
 -- ===============================================================================
--- Game Loop
+-- Delta Time
 -- ===============================================================================
 
--- TODO: scene mgmt: https://www.youtube.com/watch?v=3LoMft137z8
-
--- TODO: organize this?
 DELTA_TIME = 0
 
 function updateDeltaTime()
     DELTA_TIME = pd.getElapsedTime()
     pd.resetElapsedTime()
 end
+
+-- ===============================================================================
+-- Scene Manager
+-- ===============================================================================
+SCENE_MANAGER = SceneManager()
+SCENE_MANAGER:switchScene(GardenScene)
+
+-- ===============================================================================
+-- Game Loop
+-- ===============================================================================
 
 function pd.update()
     updateDeltaTime()

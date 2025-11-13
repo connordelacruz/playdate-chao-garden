@@ -13,7 +13,8 @@ import 'util/state'
 import 'util/scene-manager'
 -- Chao
 import 'chao/main'
--- Garden
+-- Scenes
+import 'title/scene'
 import 'garden/scene'
 
 local pd <const> = playdate
@@ -23,6 +24,7 @@ local gfx <const> = pd.graphics
 -- Delta Time
 -- ===============================================================================
 
+-- Will store time in seconds since the last frame
 DELTA_TIME = 0
 
 function updateDeltaTime()
@@ -31,10 +33,16 @@ function updateDeltaTime()
 end
 
 -- ===============================================================================
--- Scene Manager
+-- Scenes
 -- ===============================================================================
+-- Global enum of scenes
+SCENES = {
+    title = TitleScene,
+    garden = GardenScene,
+}
+-- Scene Manager
 SCENE_MANAGER = SceneManager()
-SCENE_MANAGER:switchScene(GardenScene)
+SCENE_MANAGER:switchScene(SCENES.title)
 
 -- ===============================================================================
 -- Game Loop

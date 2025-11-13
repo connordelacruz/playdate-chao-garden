@@ -52,9 +52,10 @@ SCENES = {
 }
 -- Scene to load on game start
 local startingScene = DEBUG_MANAGER:isFlagSet(DEBUG_FLAGS.skipTitle) and SCENES.garden or SCENES.title
+-- TODO: hack so it doesn't transition on initial load, but it would be nicer to let the manager initialize shit:
+startingScene()
 -- Scene Manager
 SCENE_MANAGER = SceneManager()
-SCENE_MANAGER:switchScene(startingScene)
 
 -- ===============================================================================
 -- Game Loop

@@ -48,7 +48,6 @@ function StatusPanel:renderUI()
 end
 
 -- Build Menu UI
--- TODO: We're gonna want to update stuff here dynamically
 function StatusPanel:createPanelUI()
     local box = playout.box.new
     local image = playout.image.new
@@ -70,6 +69,7 @@ function StatusPanel:createPanelUI()
 
     return box(outerPanelBoxProps, {
         self:createNameUI(),
+        self:createMoodBellyUI(),
     })
 end
 
@@ -100,5 +100,84 @@ function StatusPanel:createNameUI()
         nameText,
         lifeStageText,
     }
+    )
+end
+
+function StatusPanel:createMoodBellyUI()
+    local box = playout.box.new
+
+    local mood = self.chao == nil and 0 or self.chao.data.mood
+    local belly = self.chao == nil and 0 or self.chao.data.belly
+
+    local moodUI = self:createBarUI('Mood', mood, nil)
+    local bellyUI = self:createBarUI('Belly', belly, nil)
+
+    return box(
+        {},
+        {
+            moodUI,
+            bellyUI,
+        }
+    )
+end
+
+function StatusPanel:createStatUI(statName, statData)
+    local progress = statData == nil and 0 or statData.progress
+    local level = statData == nil and 0 or statData.level
+    return self:createBarUI(statName, progress, level)
+end
+
+function StatusPanel:createBarUI(title, progress, level)
+    local box = playout.box.new
+    local image = playout.image.new
+    local text = playout.text.new
+
+    -- Title and optional LV display
+    local titleText = text(
+        '*' .. title .. '*',
+        {
+            flex = 2,
+            alignment = kTextAlignment.left,
+        }
+    )
+    local levelText = text(
+        level == nil and '' or 'LV ' .. level,
+        {
+            flex = 1,
+            alignment = kTextAlignment.right,
+        }
+    )
+    local titleContainer = box({
+            direction = playout.kDirectionHorizontal,
+            vAlign = playout.kAlignCenter,
+        },
+        {
+            titleText,
+            levelText,
+        }
+    )
+    -- Progress bar
+    -- TODO: implement
+    local progressBarContainer = box({
+            vAlign = playout.kAlignCenter,
+        },
+        {
+            text(
+                progress .. '%',
+                {
+                    alignment = kTextAlignment.center,
+                }
+            )
+        }
+    )
+
+    return box({
+            spacing = 3,
+            hAlign = playout.kAlignCenter,
+        },
+        {
+            titleContainer,
+            progressBarContainer,
+        }
     )
 end

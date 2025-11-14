@@ -29,7 +29,7 @@ DEBUG_MANAGER = DebugManager()
 -- Debug Options:
 -- --------------------------------------------------------------------------------
 -- Skip title scene, go straight into garden:
--- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
+DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 
 -- ===============================================================================
 -- Delta Time

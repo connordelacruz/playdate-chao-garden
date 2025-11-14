@@ -9,14 +9,19 @@ class('StatusPanel').extends(gfx.sprite)
 -- panelWidth: Set to screen width minus background width
 function StatusPanel:init(panelWidth)
     StatusPanel.super.init(self)
+    -- --------------------------------------------------------------------------------
+    -- Data
+    -- --------------------------------------------------------------------------------
+    -- To be set after initialization
+    self.chao = nil
+    self.rings = 0
 
+    -- --------------------------------------------------------------------------------
+    -- Image
+    -- --------------------------------------------------------------------------------
     self.panelWidth = panelWidth
-
     -- Setup Playout elements for UI
-    -- TODO: We're gonna want to update stuff here dynamically, so maybe store panelUI in class and draw it in draw function
-    local panelUI = playout.tree.new(self:createPanelUI())
-    local panelImage = panelUI:draw()
-    self:setImage(panelImage)
+    self:renderUI()
 
     -- Draw from top left corner
     self:setCenter(0, 0)
@@ -24,6 +29,22 @@ function StatusPanel:init(panelWidth)
     self:moveTo(0, 0)
 
     self:add()
+end
+
+function StatusPanel:setChao(chao)
+    self.chao = chao
+    self:renderUI()
+end
+
+function StatusPanel:setRings(rings)
+    self.rings = rings
+    self:renderUI()
+end
+
+function StatusPanel:renderUI()
+    local panelUI = playout.tree.new(self:createPanelUI())
+    local panelImage = panelUI:draw()
+    self:setImage(panelImage)
 end
 
 -- Build Menu UI
@@ -57,12 +78,18 @@ function StatusPanel:createNameUI()
     local image = playout.image.new
     local text = playout.text.new
 
+    local name = ''
+    local lifeStage = ''
+    if self.chao ~= nil then
+        name = '*' .. self.chao.data.name .. '*'
+        lifeStage = self.chao.data.age > 1 and 'adult' or 'child'
+    end
     -- Chao name display
-    local nameText = text('*Megabob*', {
+    local nameText = text(name, {
         alignment = kTextAlignment.center,
     })
     -- Chao life stage display
-    local lifeStageText = text('child', {
+    local lifeStageText = text(lifeStage, {
         alignment = kTextAlignment.center,
     })
 

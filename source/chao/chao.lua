@@ -23,6 +23,39 @@ class('Chao').extends(gfx.sprite)
 function Chao:init(startX, startY)
     Chao.super.init(self)
     -- --------------------------------------------------------------------------------
+    -- Data and Stats
+    -- --------------------------------------------------------------------------------
+    -- TODO: save/load
+    self.data = {
+        name = 'Megabob',
+        age = 3,
+        mood = 75,
+        belly = 50,
+        -- TODO: figure out grade/level/value calculations? 
+        stats = {
+            swim = {
+                level = 33,
+                progress = 50,
+            },
+            fly = {
+                level = 66,
+                progress = 50,
+            },
+            run = {
+                level = 99,
+                progress = 0,
+            },
+            power = {
+                level = 75,
+                progress = 50,
+            },
+            stamina = {
+                level = 51,
+                progress = 50,
+            },
+        },
+    }
+    -- --------------------------------------------------------------------------------
     -- Spritesheet
     -- --------------------------------------------------------------------------------
     self.spritesheet = gfx.imagetable.new('images/chao/chao-idle-walk')

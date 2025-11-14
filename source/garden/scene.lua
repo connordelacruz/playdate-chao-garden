@@ -20,6 +20,7 @@ function GardenScene:init()
     -- Chao
     local gardenCenterX = 400 - (self.bg.width / 2)
     self.chao = Chao(gardenCenterX, SCREEN_CENTER_Y)
+    self.statusPanel:setChao(self.chao)
 
     self:add()
 end

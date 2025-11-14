@@ -2,6 +2,22 @@ local pd <const> = playdate
 local gfx <const> = pd.graphics
 
 -- ===============================================================================
+-- Constants
+-- ===============================================================================
+
+-- --------------------------------------------------------------------------------
+-- Fonts
+-- --------------------------------------------------------------------------------
+local kTitleFont <const> = gfx.font.new('fonts/diamond_12')
+local kLevelFont <const> = gfx.font.new('fonts/dpaint_8')
+-- --------------------------------------------------------------------------------
+-- Styles
+-- --------------------------------------------------------------------------------
+local kTitleStyle <const> = {
+    fontFamily = kTitleFont,
+}
+
+-- ===============================================================================
 -- Status Panel UI "Sprite"
 -- ===============================================================================
 class('StatusPanel').extends(gfx.sprite)
@@ -70,6 +86,7 @@ function StatusPanel:createPanelUI()
     return box(outerPanelBoxProps, {
         self:createNameUI(),
         self:createMoodBellyUI(),
+        self:createStatsUI(),
     })
 end
 
@@ -91,6 +108,7 @@ function StatusPanel:createNameUI()
     -- Chao life stage display
     local lifeStageText = text(lifeStage, {
         alignment = kTextAlignment.center,
+        fontFamily = kTitleFont,
     })
 
     return box({
@@ -121,6 +139,42 @@ function StatusPanel:createMoodBellyUI()
     )
 end
 
+function StatusPanel:createStatsUI()
+    local box = playout.box.new
+
+    local stats = {}
+    if self.chao ~= nil then
+        stats = self.chao.data.stats
+    else
+        -- Default to all 0's
+        local statIndexes = {
+            'swim',
+            'fly',
+            'run',
+            'power',
+            'stamina',
+        }
+        for _,statIndex in ipairs(statIndexes) do
+            stats[statIndex] = {
+                level = 0,
+                progress = 0,
+            }
+        end
+    end
+
+    local statsUIChildren = {}
+    for statIndex,statData in pairs(stats) do
+        local title = statIndex:gsub("^%l", string.upper)
+        local statUI = self:createStatUI(title, statData)
+        statsUIChildren[#statsUIChildren+1] = statUI
+    end
+
+    return box(
+        {},
+        statsUIChildren
+    )
+end
+
 function StatusPanel:createStatUI(statName, statData)
     local progress = statData == nil and 0 or statData.progress
     local level = statData == nil and 0 or statData.level
@@ -134,10 +188,11 @@ function StatusPanel:createBarUI(title, progress, level)
 
     -- Title and optional LV display
     local titleText = text(
-        '*' .. title .. '*',
+        title,
         {
             flex = 2,
             alignment = kTextAlignment.left,
+            style = kTitleStyle,
         }
     )
     local levelText = text(
@@ -145,6 +200,7 @@ function StatusPanel:createBarUI(title, progress, level)
         {
             flex = 1,
             alignment = kTextAlignment.right,
+            fontFamily = kLevelFont,
         }
     )
     local titleContainer = box({
@@ -165,6 +221,7 @@ function StatusPanel:createBarUI(title, progress, level)
             text(
                 progress .. '%',
                 {
+                    fontFamily = kLevelFont,
                     alignment = kTextAlignment.center,
                 }
             )

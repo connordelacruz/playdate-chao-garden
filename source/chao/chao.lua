@@ -93,6 +93,5 @@ end
 function Chao:update()
     local ms = pd.getCurrentTimeMilliseconds()
     local spriteIndex = (ms // 500 % #self.spritesheet) + 1
-    print(spriteIndex)
     self:setImage(self.spritesheet[spriteIndex])
 end

@@ -6,6 +6,13 @@ local gfx <const> = pd.graphics
 -- ===============================================================================
 
 -- --------------------------------------------------------------------------------
+-- Playout Shorthands
+-- --------------------------------------------------------------------------------
+local box <const> = playout.box.new
+local image <const> = playout.image.new
+local text <const> = playout.text.new
+
+-- --------------------------------------------------------------------------------
 -- Fonts
 -- --------------------------------------------------------------------------------
 local kTitleFont <const> = gfx.font.new('fonts/diamond_12')
@@ -65,10 +72,6 @@ end
 
 -- Build Menu UI
 function StatusPanel:createPanelUI()
-    local box = playout.box.new
-    local image = playout.image.new
-    local text = playout.text.new
-
     local outerPanelBoxProps = {
         width = self.panelWidth,
         height = SCREEN_HEIGHT,
@@ -91,10 +94,6 @@ function StatusPanel:createPanelUI()
 end
 
 function StatusPanel:createNameUI()
-    local box = playout.box.new
-    local image = playout.image.new
-    local text = playout.text.new
-
     local name = ''
     local lifeStage = ''
     if self.chao ~= nil then
@@ -122,8 +121,6 @@ function StatusPanel:createNameUI()
 end
 
 function StatusPanel:createMoodBellyUI()
-    local box = playout.box.new
-
     local mood = self.chao == nil and 0 or self.chao.data.mood
     local belly = self.chao == nil and 0 or self.chao.data.belly
 
@@ -140,8 +137,6 @@ function StatusPanel:createMoodBellyUI()
 end
 
 function StatusPanel:createStatsUI()
-    local box = playout.box.new
-
     local stats = {}
     if self.chao ~= nil then
         stats = self.chao.data.stats
@@ -182,10 +177,6 @@ function StatusPanel:createStatUI(statName, statData)
 end
 
 function StatusPanel:createBarUI(title, progress, level)
-    local box = playout.box.new
-    local image = playout.image.new
-    local text = playout.text.new
-
     -- Title and optional LV display
     local titleText = text(
         title,
@@ -213,28 +204,41 @@ function StatusPanel:createBarUI(title, progress, level)
         }
     )
     -- Progress bar
-    -- TODO: implement
-    local progressBarContainer = box({
-            vAlign = playout.kAlignCenter,
-        },
-        {
-            text(
-                progress .. '%',
-                {
-                    fontFamily = kLevelFont,
-                    alignment = kTextAlignment.center,
-                }
-            )
-        }
-    )
+    local progressBarContainer = self:createProgressBar(progress)
 
     return box({
             spacing = 3,
             hAlign = playout.kAlignCenter,
+            paddingBottom = 5,
         },
         {
             titleContainer,
             progressBarContainer,
         }
     )
+end
+
+function StatusPanel:createProgressBar(progress)
+    -- Convert progress percent to rounded down int
+    local progressInt = progress // 10
+    print(progressInt)
+    -- Create little progress boxes
+    local progressBarChildren = {}
+    for i=1,10 do
+        local filled = i <= progressInt
+        local progressChunkBox = box({
+            flex = 1,
+            height = 6,
+            border = 1,
+            borderRadius = 3,
+            backgroundColor = filled and gfx.kColorBlack or gfx.kColorWhite,
+        })
+        progressBarChildren[i] = progressChunkBox
+    end
+
+    return box({
+            direction = playout.kDirectionHorizontal,
+            vAlign = playout.kAlignCenter,
+        },
+        progressBarChildren)
 end

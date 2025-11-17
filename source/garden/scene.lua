@@ -21,6 +21,33 @@ function GardenScene:init()
     local gardenCenterX = 400 - (self.bg.width / 2)
     self.chao = Chao(gardenCenterX, SCREEN_CENTER_Y)
     self.statusPanel:setChao(self.chao)
+    -- Boundary collisions
+    self:createBoundaries()
 
     self:add()
+end
+
+-- Create collision sprites for cursor and chao boundaries
+function GardenScene:createBoundaries()
+    self.boundaries = {}
+    local kWallThiccness <const> = 6
+    self.boundaries[#self.boundaries + 1] = gfx.sprite.addEmptyCollisionSprite(
+        0, 0, kWallThiccness, SCREEN_HEIGHT
+    )
+    self.boundaries[#self.boundaries + 1] = gfx.sprite.addEmptyCollisionSprite(
+        SCREEN_WIDTH - kWallThiccness, 0, kWallThiccness, SCREEN_HEIGHT
+    )
+    self.boundaries[#self.boundaries + 1] = gfx.sprite.addEmptyCollisionSprite(
+        0, 0, SCREEN_WIDTH, kWallThiccness
+    )
+    self.boundaries[#self.boundaries + 1] = gfx.sprite.addEmptyCollisionSprite(
+        0, SCREEN_HEIGHT - kWallThiccness, SCREEN_WIDTH, kWallThiccness
+    )
+
+    for _,boundarySprite in ipairs(self.boundaries) do
+        boundarySprite:setTag(TAGS.SCREEN_BOUNDARY)
+        boundarySprite:add()
+    end
+
+    -- TODO: chao-specific collision at edge of ui
 end

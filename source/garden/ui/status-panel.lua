@@ -221,7 +221,6 @@ end
 function StatusPanel:createProgressBar(progress)
     -- Convert progress percent to rounded down int
     local progressInt = progress // 10
-    print(progressInt)
     -- Create little progress boxes
     local progressBarChildren = {}
     for i=1,10 do

@@ -23,7 +23,7 @@ function Cursor:init(startX, startY)
     -- Collision
     -- --------------------------------------------------------------------------------
     self:setCollideRect(0, 0, self:getSize())
-    self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
+    self:setTag(TAGS.CURSOR)
     -- --------------------------------------------------------------------------------
     -- Properties
     -- --------------------------------------------------------------------------------
@@ -67,7 +67,16 @@ function Cursor:update()
         -- Calculate desired position
         local targetX = self.x + dx * distance
         local targetY = self.y + dy * distance
-        -- TODO: keep from going out of bounds
-        self:moveTo(targetX, targetY)
+        self:moveWithCollisions(targetX, targetY)
     end
+end
+
+function Cursor:collisionResponse(other)
+    -- Overlap by default
+    local toReturn = gfx.sprite.kCollisionTypeOverlap
+    -- Freeze if we hit the edges of the screen
+    if other:getTag() == TAGS.SCREEN_BOUNDARY then
+        toReturn = gfx.sprite.kCollisionTypeFreeze
+    end
+    return toReturn
 end

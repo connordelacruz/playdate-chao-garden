@@ -49,5 +49,5 @@ function GardenScene:createBoundaries()
         boundarySprite:add()
     end
 
-    -- TODO: chao-specific collision at edge of ui
+    -- TODO: chao-specific collision at edge of ui and around the pond
 end

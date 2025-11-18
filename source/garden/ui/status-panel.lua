@@ -102,27 +102,16 @@ end
 
 function StatusPanel:createNameUI()
     local name = ''
-    local lifeStage = ''
     if self.chao ~= nil then
         name = '*' .. self.chao.data.name .. '*'
-        lifeStage = self.chao.data.age > 1 and 'adult' or 'child'
     end
-    -- Chao name display
     local nameText = text(name, {
         alignment = kTextAlignment.center,
     })
-    -- Chao life stage display
-    local lifeStageText = text(lifeStage, {
-        alignment = kTextAlignment.center,
-        fontFamily = kTitleFont,
-    })
 
-    return box({
-        spacing = 3,
-    },
+    return box({},
     {
         nameText,
-        lifeStageText,
     }
     )
 end

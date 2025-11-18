@@ -28,7 +28,6 @@ function Chao:init(startX, startY)
     -- TODO: save/load
     self.data = {
         name = 'Megabob',
-        age = 3,
         mood = 75,
         belly = 50,
         -- TODO: figure out grade/level/value calculations? 

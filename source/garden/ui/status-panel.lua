@@ -11,7 +11,6 @@ local gfx <const> = pd.graphics
 local box <const> = playout.box.new
 local image <const> = playout.image.new
 local text <const> = playout.text.new
-
 -- --------------------------------------------------------------------------------
 -- Fonts
 -- --------------------------------------------------------------------------------
@@ -23,10 +22,18 @@ local kLevelFont <const> = gfx.font.new('fonts/dpaint_8')
 local kTitleStyle <const> = {
     fontFamily = kTitleFont,
 }
+-- --------------------------------------------------------------------------------
+-- Stats Display
+-- --------------------------------------------------------------------------------
+-- Lua apparently does not maintain ordering of tables indexed by keys, so using this
+-- constant to explicitly define the order that stats should be displayed in.
+local kStatIndexesInOrder <const> = {
+    'swim', 'fly', 'run', 'power', 'stamina',
+}
 
--- ===============================================================================
--- Status Panel UI "Sprite"
--- ===============================================================================
+-- ================================================================================
+-- Status Panel UI Sprite
+-- ================================================================================
 class('StatusPanel').extends(gfx.sprite)
 
 -- panelWidth: Set to screen width minus background width
@@ -142,14 +149,7 @@ function StatusPanel:createStatsUI()
         stats = self.chao.data.stats
     else
         -- Default to all 0's
-        local statIndexes = {
-            'swim',
-            'fly',
-            'run',
-            'power',
-            'stamina',
-        }
-        for _,statIndex in ipairs(statIndexes) do
+        for _,statIndex in ipairs(kStatIndexesInOrder) do
             stats[statIndex] = {
                 level = 0,
                 progress = 0,
@@ -158,7 +158,8 @@ function StatusPanel:createStatsUI()
     end
 
     local statsUIChildren = {}
-    for statIndex,statData in pairs(stats) do
+    for _,statIndex in ipairs(kStatIndexesInOrder) do
+        local statData = stats[statIndex]
         local title = statIndex:gsub("^%l", string.upper)
         local statUI = self:createStatUI(title, statData)
         statsUIChildren[#statsUIChildren+1] = statUI

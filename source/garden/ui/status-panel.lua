@@ -14,13 +14,69 @@ local text <const> = playout.text.new
 -- --------------------------------------------------------------------------------
 -- Fonts
 -- --------------------------------------------------------------------------------
-local kTitleFont <const> = gfx.font.new('fonts/diamond_12')
-local kLevelFont <const> = gfx.font.new('fonts/dpaint_8')
+local kFonts <const> = {
+    -- Chao name
+    name = gfx.getSystemFont(gfx.font.kVariantBold),
+    -- Bar UI title
+    title = gfx.font.new('fonts/diamond_12'),
+    -- Stat UI level
+    level = gfx.font.new('fonts/dpaint_8'),
+}
 -- --------------------------------------------------------------------------------
 -- Styles
 -- --------------------------------------------------------------------------------
-local kTitleStyle <const> = {
-    fontFamily = kTitleFont,
+-- Root panel UI
+local kRootPanelStyle <const> = {
+    -- Note: Width to be set based on self.panelWidth when UI is created
+    height = SCREEN_HEIGHT,
+    vAlign = playout.kAlignStart,
+    hAlign = playout.kAlignCenter,
+    paddingTop = 12,
+    paddingBottom = 12,
+    paddingLeft = 6,
+    paddingRight = 6,
+    backgroundColor = gfx.kColorWhite,
+    borderRadius = 9,
+    border = 2,
+}
+-- Chao name text
+local kNameTextStyle <const> = {
+    fontFamily = kFonts.name,
+    alignment = kTextAlignment.center,
+}
+-- Bar UI title text
+local kTitleTextStyle <const> = {
+    fontFamily = kFonts.title,
+    alignment = kTextAlignment.left,
+}
+-- Stat level text
+local kLevelTextStyle <const> = {
+    fontFamily = kFonts.level,
+    alignment = kTextAlignment.right,
+}
+-- Bar UI title/level container
+local kBarTitleContainerStyle <const> = {
+    direction = playout.kDirectionHorizontal,
+    vAlign = playout.kAlignCenter,
+    hAlign = playout.kAlignStretch,
+}
+-- Progress bar chunks
+local kProgressBarChunkStyle <const> = {
+    height = 6,
+    border = 1,
+    borderRadius = 3,
+}
+-- Progress bar container
+local kProgressBarContainerStyle <const> = {
+    direction = playout.kDirectionHorizontal,
+    vAlign = playout.kAlignCenter,
+    hAlign = playout.kAlignStretch,
+}
+-- Bar UI container
+local kBarUIContainerStyle <const> = {
+    spacing = 3,
+    hAlign = playout.kAlignStretch,
+    paddingBottom = 5,
 }
 -- --------------------------------------------------------------------------------
 -- Stats Display
@@ -80,17 +136,9 @@ end
 -- Build Menu UI
 function StatusPanel:createPanelUI()
     local outerPanelBoxProps = {
+        id = 'status-panel-root',
+        style = kRootPanelStyle,
         width = self.panelWidth,
-        height = SCREEN_HEIGHT,
-        vAlign = playout.kAlignStart,
-        hAlign = playout.kAlignCenter,
-        paddingTop = 12,
-        paddingBottom = 12,
-        paddingLeft = 6,
-        paddingRight = 6,
-        backgroundColor = gfx.kColorWhite,
-        borderRadius = 9,
-        border = 2,
     }
 
     return box(outerPanelBoxProps, {
@@ -101,18 +149,17 @@ function StatusPanel:createPanelUI()
 end
 
 function StatusPanel:createNameUI()
-    local name = ''
-    if self.chao ~= nil then
-        name = '*' .. self.chao.data.name .. '*'
-    end
+    local name = self.chao == nil and '' or self.chao.data.name
     local nameText = text(name, {
-        alignment = kTextAlignment.center,
+        style = kNameTextStyle,
     })
 
-    return box({},
-    {
-        nameText,
-    }
+    return box({
+            id = 'name-container',
+        },
+        {
+            nameText,
+        }
     )
 end
 
@@ -171,22 +218,19 @@ function StatusPanel:createBarUI(title, progress, level)
     local titleText = text(
         title,
         {
+            style = kTitleTextStyle,
             flex = 2,
-            alignment = kTextAlignment.left,
-            style = kTitleStyle,
         }
     )
     local levelText = text(
         level == nil and '' or 'LV ' .. level,
         {
+            style = kLevelTextStyle,
             flex = 1,
-            alignment = kTextAlignment.right,
-            fontFamily = kLevelFont,
         }
     )
     local titleContainer = box({
-            direction = playout.kDirectionHorizontal,
-            vAlign = playout.kAlignCenter,
+            style = kBarTitleContainerStyle,
         },
         {
             titleText,
@@ -197,9 +241,7 @@ function StatusPanel:createBarUI(title, progress, level)
     local progressBarContainer = self:createProgressBar(progress)
 
     return box({
-            spacing = 3,
-            hAlign = playout.kAlignCenter,
-            paddingBottom = 5,
+            style = kBarUIContainerStyle,
         },
         {
             titleContainer,
@@ -216,18 +258,15 @@ function StatusPanel:createProgressBar(progress)
     for i=1,10 do
         local filled = i <= progressInt
         local progressChunkBox = box({
+            style = kProgressBarChunkStyle,
             flex = 1,
-            height = 6,
-            border = 1,
-            borderRadius = 3,
             backgroundColor = filled and gfx.kColorBlack or gfx.kColorWhite,
         })
         progressBarChildren[i] = progressChunkBox
     end
 
     return box({
-            direction = playout.kDirectionHorizontal,
-            vAlign = playout.kAlignCenter,
+            style = kProgressBarContainerStyle,
         },
         progressBarChildren)
 end

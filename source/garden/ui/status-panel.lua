@@ -108,6 +108,7 @@ function StatusPanel:init(panelWidth)
     self.panelWidth = panelWidth
     -- Setup Playout elements for UI
     self:renderUI()
+    -- TODO: figure out how to compute width and height of name text
 
     -- Draw from top left corner
     self:setCenter(0, 0)
@@ -128,8 +129,8 @@ function StatusPanel:setRings(rings)
 end
 
 function StatusPanel:renderUI()
-    local panelUI = playout.tree.new(self:createPanelUI())
-    local panelImage = panelUI:draw()
+    self.panelUI = playout.tree.new(self:createPanelUI())
+    local panelImage = self.panelUI:draw()
     self:setImage(panelImage)
 end
 
@@ -151,6 +152,7 @@ end
 function StatusPanel:createNameUI()
     local name = self.chao == nil and '' or self.chao.data.name
     local nameText = text(name, {
+        id = 'name-text',
         style = kNameTextStyle,
     })
 

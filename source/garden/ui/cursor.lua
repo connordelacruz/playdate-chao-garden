@@ -68,6 +68,11 @@ function Cursor:update()
         local targetX = self.x + dx * distance
         local targetY = self.y + dy * distance
         self:moveWithCollisions(targetX, targetY)
+
+        -- DEBUG: Print coordinates
+        if DEBUG_MANAGER:isFlagSet(DEBUG_FLAGS.printCursorCoordinates) then
+            print('cursor @ (' .. self.x .. ',' .. self.y ..')')
+        end
     end
 end
 

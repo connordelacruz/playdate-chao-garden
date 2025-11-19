@@ -5,6 +5,7 @@
 -- Names for debug options
 local kDebugOptions <const> = {
     'skipTitle',
+    'printCursorCoordinates',
 }
 -- Bit masks generated from above options
 local function generateDebugMasks()

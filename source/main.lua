@@ -30,6 +30,8 @@ DEBUG_MANAGER = DebugManager()
 -- --------------------------------------------------------------------------------
 -- Skip title scene, go straight into garden:
 DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
+-- When cursor moves, print coordinates to console:
+-- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.printCursorCoordinates)
 
 -- ===============================================================================
 -- Delta Time

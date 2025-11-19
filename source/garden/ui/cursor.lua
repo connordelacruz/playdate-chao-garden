@@ -40,7 +40,7 @@ function Cursor:init(startX, startY)
 end
 
 function Cursor:update()
-    local current, _, _ = pd.getButtonState()
+    local current, pressed, _ = pd.getButtonState()
     local dx = 0
     local dy = 0
     -- Determine direction cursor should move
@@ -72,6 +72,19 @@ function Cursor:update()
         -- DEBUG: Print coordinates
         if DEBUG_MANAGER:isFlagSet(DEBUG_FLAGS.printCursorCoordinates) then
             print('cursor @ (' .. self.x .. ',' .. self.y ..')')
+        end
+    else
+        -- If stationary and A is pressed, attempt to click
+        if (pressed & pd.kButtonA) > 0 then
+            local overlapping = self:overlappingSprites()
+            for _,other in pairs(overlapping) do
+                -- TODO: array of clickable tags
+                if other:getTag() == TAGS.CLICK_TARGET then
+                    -- TODO: ensure click() exists and is callable
+                    other:click()
+                    break
+                end
+            end
         end
     end
 end

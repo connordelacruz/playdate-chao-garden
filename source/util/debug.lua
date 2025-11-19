@@ -45,6 +45,8 @@ end
 -- Utility
 -- --------------------------------------------------------------------------------
 
+-- TODO: use sdk tableDump() instead???
+--       https://sdk.play.date/3.0.1/Inside%20Playdate.html#_object_oriented_programming_in_lua:~:text=A%20debugging%20function%20Object%3AtableDump(%5Bindent%5D%2C%20%5Btable%5D)%20is%20provided%20to%20print%20all%20key/value%20pairs%20from%20the%20object%20and%20its%20superclasses.
 function DebugManager:printTable(t, maxDepth)
     local out = self:tableToString(t, 1, maxDepth)
     print(out)

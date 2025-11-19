@@ -21,6 +21,8 @@ TAG_NAMES = {
     'CHAO',
     -- Cursor
     'CURSOR',
+    -- Clickable UI
+    'CLICK_TARGET',
     -- Edges of the screen
     'SCREEN_BOUNDARY',
     -- Edge of the garden that is not the edge of the screen

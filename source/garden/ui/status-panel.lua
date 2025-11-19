@@ -166,18 +166,6 @@ function StatusPanel:createNameUI()
     )
 end
 
-function StatusPanel:createEditNameClickTarget()
-    if self.panelUI == nil then
-        return
-    end
-    local nameContainer = self.panelUI:get('name-container')
-    if self.editNameClickTarget == nil then
-        self.editNameClickTarget = EditNameClickTarget(nameContainer.rect)
-    else
-        self.editNameClickTarget:updateRect(nameContainer.rect)
-    end
-end
-
 function StatusPanel:createMoodBellyUI()
     local mood = self.chao == nil and 0 or self.chao.data.mood
     local belly = self.chao == nil and 0 or self.chao.data.belly
@@ -286,6 +274,19 @@ function StatusPanel:createProgressBar(progress)
         progressBarChildren)
 end
 
+-- Create/update edit name click target
+function StatusPanel:createEditNameClickTarget()
+    if self.panelUI == nil then
+        return
+    end
+    local nameContainer = self.panelUI:get('name-container')
+    if self.editNameClickTarget == nil then
+        self.editNameClickTarget = EditNameClickTarget(nameContainer.rect)
+    else
+        self.editNameClickTarget:updateRect(nameContainer.rect)
+    end
+end
+
 -- ================================================================================
 -- Edit Name Sprite
 -- ================================================================================
@@ -294,9 +295,13 @@ class('EditNameClickTarget').extends(gfx.sprite)
 function EditNameClickTarget:init(nameContainerRect)
     EditNameClickTarget.super.init(self)
 
+    self.stroke = 2
+    self.hPadding = self.stroke + 2
     self:updateRect(nameContainerRect)
 
+    -- Collisions
     self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
+    self:setTag(TAGS.CLICK_TARGET)
 
     -- Set Z-index to a high value, but not as high as the cursor
     self:setZIndex(100)
@@ -307,7 +312,8 @@ function EditNameClickTarget:init(nameContainerRect)
 end
 
 function EditNameClickTarget:updateRect(nameContainerRect)
-    self:setSize(nameContainerRect.width, nameContainerRect.height)
+    local hPaddingAdding = 2 * self.hPadding
+    self:setSize(nameContainerRect.width + hPaddingAdding, nameContainerRect.height)
     self:moveTo(nameContainerRect:centerPoint())
     self:updateHoverImage()
 end
@@ -315,12 +321,19 @@ end
 function EditNameClickTarget:updateHoverImage()
     local img = gfx.image.new(self:getSize())
     gfx.pushContext(img)
-        gfx.setLineWidth(2)
+        gfx.setLineWidth(self.stroke)
         gfx.setStrokeLocation(gfx.kStrokeInside)
         gfx.drawRect(0, 0, self:getSize())
     gfx.popContext()
     self:setImage(img)
     self:setCollideRect(0, 0, self:getSize())
+end
+
+function EditNameClickTarget:click()
+    -- TODO: show name text
+    -- TODO: freeze cursor until keyboard is hidden
+    -- TODO: handlers
+    pd.keyboard.show()
 end
 
 function EditNameClickTarget:update()

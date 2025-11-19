@@ -108,7 +108,6 @@ function StatusPanel:init(panelWidth)
     self.panelWidth = panelWidth
     -- Setup Playout elements for UI
     self:renderUI()
-    -- TODO: figure out how to compute width and height of name text
 
     -- Draw from top left corner
     self:setCenter(0, 0)
@@ -132,6 +131,7 @@ function StatusPanel:renderUI()
     self.panelUI = playout.tree.new(self:createPanelUI())
     local panelImage = self.panelUI:draw()
     self:setImage(panelImage)
+    self:createEditNameClickTarget()
 end
 
 -- Build Menu UI
@@ -158,11 +158,24 @@ function StatusPanel:createNameUI()
 
     return box({
             id = 'name-container',
+            minWidth = 66,
         },
         {
             nameText,
         }
     )
+end
+
+function StatusPanel:createEditNameClickTarget()
+    if self.panelUI == nil then
+        return
+    end
+    local nameContainer = self.panelUI:get('name-container')
+    if self.editNameClickTarget == nil then
+        self.editNameClickTarget = EditNameClickTarget(nameContainer.rect)
+    else
+        self.editNameClickTarget:updateRect(nameContainer.rect)
+    end
 end
 
 function StatusPanel:createMoodBellyUI()
@@ -271,4 +284,55 @@ function StatusPanel:createProgressBar(progress)
             style = kProgressBarContainerStyle,
         },
         progressBarChildren)
+end
+
+-- ================================================================================
+-- Edit Name Sprite
+-- ================================================================================
+class('EditNameClickTarget').extends(gfx.sprite)
+
+function EditNameClickTarget:init(nameContainerRect)
+    EditNameClickTarget.super.init(self)
+
+    self:updateRect(nameContainerRect)
+
+    self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
+
+    -- Set Z-index to a high value, but not as high as the cursor
+    self:setZIndex(100)
+    -- Invisible by default
+    self:setVisible(false)
+
+    self:add()
+end
+
+function EditNameClickTarget:updateRect(nameContainerRect)
+    self:setSize(nameContainerRect.width, nameContainerRect.height)
+    self:moveTo(nameContainerRect:centerPoint())
+    self:updateHoverImage()
+end
+
+function EditNameClickTarget:updateHoverImage()
+    local img = gfx.image.new(self:getSize())
+    gfx.pushContext(img)
+        gfx.setLineWidth(2)
+        gfx.setStrokeLocation(gfx.kStrokeInside)
+        gfx.drawRect(0, 0, self:getSize())
+    gfx.popContext()
+    self:setImage(img)
+    self:setCollideRect(0, 0, self:getSize())
+end
+
+function EditNameClickTarget:update()
+    -- Determine if cursor is hovering over this
+    -- TODO: probably move logic to cursor / use states n shit but this is ok for a draft
+    local overlapping = self:overlappingSprites()
+    local isCursorHovering = false
+    for _,other in pairs(overlapping) do
+        if other:getTag() == TAGS.CURSOR then
+            isCursorHovering = true
+            break
+        end
+    end
+    self:setVisible(isCursorHovering)
 end

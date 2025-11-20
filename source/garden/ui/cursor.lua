@@ -31,9 +31,21 @@ function CursorActiveState:update()
     local isMoving = self.cursor:handleMovement()
     -- If stationary, handle A button input
     if not isMoving then
-        -- TODO: use some sort of return value to figure out potential state changes
         self.cursor:handleClick()
     end
+end
+
+-- --------------------------------------------------------------------------------
+-- Disabled:
+-- - Cursor is hidden
+-- - Input is ignored
+-- --------------------------------------------------------------------------------
+local kDisabledState <const> = 'disabled'
+class('CursorDisabledState').extends('CursorState')
+
+function CursorDisabledState:enter()
+    -- Hide cursor
+    self.cursor:setVisible(false)
 end
 
 -- ================================================================================
@@ -64,6 +76,7 @@ function Cursor:init(startX, startY)
     -- --------------------------------------------------------------------------------
     self.states = {
         [kActiveState] = CursorActiveState(self),
+        [kDisabledState] = CursorDisabledState(self),
     }
     self:setInitialState(kActiveState)
     -- --------------------------------------------------------------------------------
@@ -83,6 +96,8 @@ end
 -- --------------------------------------------------------------------------------
 
 function Cursor:setImageFromSpritesheet(spriteIndex)
+    -- If this method is called, we're assuming the sprite should be visible
+    self:setVisible(true)
     self:setImage(self.spritesheet[spriteIndex])
 end
 
@@ -114,6 +129,18 @@ function Cursor:collisionResponse(other)
         toReturn = gfx.sprite.kCollisionTypeFreeze
     end
     return toReturn
+end
+
+-- --------------------------------------------------------------------------------
+-- State Functions (for external interaction)
+-- --------------------------------------------------------------------------------
+
+function Cursor:disable()
+    self:setState(kDisabledState)
+end
+
+function Cursor:enable()
+    self:setState(kActiveState)
 end
 
 -- --------------------------------------------------------------------------------
@@ -171,7 +198,7 @@ function Cursor:handleClick()
             -- TODO: array of clickable tags
             if other:getTag() == TAGS.CLICK_TARGET then
                 -- TODO: ensure click() exists and is callable
-                other:click()
+                other:click(self)
                 break
             end
         end

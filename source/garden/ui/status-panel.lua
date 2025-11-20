@@ -281,8 +281,9 @@ function StatusPanel:createEditNameClickTarget()
     end
     local nameContainer = self.panelUI:get('name-container')
     if self.editNameClickTarget == nil then
-        self.editNameClickTarget = EditNameClickTarget(nameContainer.rect)
+        self.editNameClickTarget = EditNameClickTarget(nameContainer.rect, self.chao)
     else
+        self.editNameClickTarget.chao = self.chao
         self.editNameClickTarget:updateRect(nameContainer.rect)
     end
 end
@@ -292,8 +293,10 @@ end
 -- ================================================================================
 class('EditNameClickTarget').extends(gfx.sprite)
 
-function EditNameClickTarget:init(nameContainerRect)
+function EditNameClickTarget:init(nameContainerRect, chao)
     EditNameClickTarget.super.init(self)
+
+    self.chao = chao
 
     self.stroke = 2
     self.hPadding = self.stroke + 2
@@ -329,11 +332,26 @@ function EditNameClickTarget:updateHoverImage()
     self:setCollideRect(0, 0, self:getSize())
 end
 
-function EditNameClickTarget:click()
-    -- TODO: show name text
-    -- TODO: freeze cursor until keyboard is hidden
-    -- TODO: handlers
-    pd.keyboard.show()
+function EditNameClickTarget:click(cursor)
+    local currentName = self.chao ~= nil and self.chao.data.name or ''
+    -- Freeze cursor until keyboard is hidden
+    cursor:disable()
+    pd.keyboard.keyboardDidHideCallback = function ()
+        -- TODO: update chao name data + UI display
+        cursor:enable()
+    end
+    
+    pd.keyboard.textChangedCallback = function ()
+        local txt = pd.keyboard.text
+        if string.len(txt) > 7 then
+            pd.keyboard.text = string.sub(txt, 1, 7)
+        end
+        -- TODO: DEBUGGING
+        print(pd.keyboard.text)
+    end
+
+    -- Show keyboard
+    pd.keyboard.show(currentName)
 end
 
 function EditNameClickTarget:update()

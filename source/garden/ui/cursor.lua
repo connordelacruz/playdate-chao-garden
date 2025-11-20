@@ -82,7 +82,9 @@ function Cursor:init(startX, startY)
     -- --------------------------------------------------------------------------------
     -- Collision
     -- --------------------------------------------------------------------------------
-    self:setCollideRect(0, 0, self:getSize())
+    local width, height = self:getSize()
+    -- Slightly offset to be closer to pointer finger
+    self:setCollideRect(-(width / 4), height / 4, width, height)
     self:setTag(TAGS.CURSOR)
     -- --------------------------------------------------------------------------------
     -- Initialization

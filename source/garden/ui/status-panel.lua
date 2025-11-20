@@ -390,7 +390,7 @@ class('EditNameTextInput').extends(gfx.sprite)
 
 function EditNameTextInput:init(inputText, width)
     self.text = inputText
-    self.width = width
+    self.inputWidth = width
 
     self:renderUI()
 
@@ -403,8 +403,14 @@ function EditNameTextInput:renderUI()
     -- TODO: figure out how to do this without completely rebuilding it?
     self.textInputUI = playout.tree.new(self:createTextInputUI())
     local textInputImage = self.textInputUI:draw()
-    -- TODO: dithered background?
-    self:setImage(textInputImage)
+    local spriteImage = gfx.image.new(SCREEN_WIDTH, SCREEN_HEIGHT)
+    gfx.pushContext(spriteImage)
+        -- Draw dithered background TODO: cache this maybe
+        local filledRect = gfx.image.new(spriteImage.width, spriteImage.height, gfx.kColorBlack)
+        filledRect:drawFaded(0, 0, 0.75, gfx.image.kDitherTypeBayer8x8)
+        textInputImage:draw(0, spriteImage.height / 3)
+    gfx.popContext()
+    self:setImage(spriteImage)
 end
 
 function EditNameTextInput:createTextInputUI()
@@ -416,7 +422,7 @@ function EditNameTextInput:createTextInputUI()
         }
     )
     return box({
-        width = self.width,
+        width = self.inputWidth,
         hAlign = playout.kAlignCenter,
         vAlign = playout.kAlignCenter,
         border = 2,

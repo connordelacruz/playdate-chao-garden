@@ -89,6 +89,10 @@ function Chao:spritesheetImage(dir, action)
     return self.spritesheet[dirIndex + actionIndex]
 end
 
+function Chao:setName(newName)
+    self.data.name = newName
+end
+
 function Chao:update()
     local ms = pd.getCurrentTimeMilliseconds()
     local spriteIndex = (ms // 500 % #self.spritesheet) + 1

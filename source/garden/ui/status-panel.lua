@@ -279,28 +279,28 @@ function StatusPanel:createEditNameClickTarget()
     if self.panelUI == nil then
         return
     end
-    local nameContainer = self.panelUI:get('name-container')
     if self.editNameClickTarget == nil then
-        self.editNameClickTarget = EditNameClickTarget(nameContainer.rect, self.chao)
+        self.editNameClickTarget = EditNameClickTarget(self, self.chao)
     else
         self.editNameClickTarget.chao = self.chao
-        self.editNameClickTarget:updateRect(nameContainer.rect)
+        self.editNameClickTarget:updateRect()
     end
 end
 
 -- ================================================================================
--- Edit Name Sprite
+-- Edit Name Click Target
 -- ================================================================================
 class('EditNameClickTarget').extends(gfx.sprite)
 
-function EditNameClickTarget:init(nameContainerRect, chao)
+function EditNameClickTarget:init(statusPanel, chao)
     EditNameClickTarget.super.init(self)
 
+    self.statusPanel = statusPanel
     self.chao = chao
 
     self.stroke = 2
     self.hPadding = self.stroke + 2
-    self:updateRect(nameContainerRect)
+    self:updateRect()
 
     -- Collisions
     self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
@@ -314,7 +314,8 @@ function EditNameClickTarget:init(nameContainerRect, chao)
     self:add()
 end
 
-function EditNameClickTarget:updateRect(nameContainerRect)
+function EditNameClickTarget:updateRect()
+    local nameContainerRect = self.statusPanel.panelUI:get('name-container').rect
     local hPaddingAdding = 2 * self.hPadding
     self:setSize(nameContainerRect.width + hPaddingAdding, nameContainerRect.height)
     self:moveTo(nameContainerRect:centerPoint())
@@ -334,10 +335,23 @@ end
 
 function EditNameClickTarget:click(cursor)
     local currentName = self.chao ~= nil and self.chao.data.name or ''
+    -- Create text input sprite
+    local editNameTextInput = nil
     -- Freeze cursor until keyboard is hidden
     cursor:disable()
+
+    pd.keyboard.keyboardDidShowCallback = function ()
+        editNameTextInput = EditNameTextInput(currentName, pd.keyboard.left())
+        editNameTextInput:add()
+    end
+
     pd.keyboard.keyboardDidHideCallback = function ()
-        -- TODO: update chao name data + UI display
+        editNameTextInput:remove()
+        -- Update Chao name data
+        self.chao:setName(pd.keyboard.text)
+        -- Redraw panel UI
+        self.statusPanel:renderUI()
+        -- Re-enable cursor
         cursor:enable()
     end
     
@@ -346,8 +360,7 @@ function EditNameClickTarget:click(cursor)
         if string.len(txt) > 7 then
             pd.keyboard.text = string.sub(txt, 1, 7)
         end
-        -- TODO: DEBUGGING
-        print(pd.keyboard.text)
+        editNameTextInput:updateText(pd.keyboard.text)
     end
 
     -- Show keyboard
@@ -366,4 +379,55 @@ function EditNameClickTarget:update()
         end
     end
     self:setVisible(isCursorHovering)
+end
+
+-- ================================================================================
+-- Edit Name Text Input
+-- ================================================================================
+class('EditNameTextInput').extends(gfx.sprite)
+
+function EditNameTextInput:init(inputText, width)
+    self.text = inputText
+    self.width = width
+
+    self:renderUI()
+
+    self:setCenter(0, 0.5)
+    self:moveTo(0, SCREEN_CENTER_Y)
+    self:setZIndex(999)
+end
+
+function EditNameTextInput:renderUI()
+    -- TODO: figure out how to do this without completely rebuilding it?
+    self.textInputUI = playout.tree.new(self:createTextInputUI())
+    local textInputImage = self.textInputUI:draw()
+    -- TODO: dithered background?
+    self:setImage(textInputImage)
+end
+
+function EditNameTextInput:createTextInputUI()
+    self.nameTextUI = text(
+        self.text,
+        {
+            id = 'name-input-text',
+            style = kNameTextStyle,
+        }
+    )
+    return box({
+        width = self.width,
+        hAlign = playout.kAlignCenter,
+        vAlign = playout.kAlignCenter,
+        border = 2,
+        borderRadius = 9,
+        backgroundColor = gfx.kColorWhite,
+        paddingTop = 6,
+        paddingBottom = 6,
+    }, {
+        self.nameTextUI,
+    })
+end
+
+function EditNameTextInput:updateText(newText)
+    self.text = newText
+    self:renderUI()
 end

@@ -84,7 +84,7 @@ function SceneManager:createTransitionSprite()
     local filledRect = gfx.image.new(400, 240, gfx.kColorBlack)
     local transitionSprite = gfx.sprite.new(filledRect)
     transitionSprite:moveTo(200, 120)
-    transitionSprite:setZIndex(10000)
+    transitionSprite:setZIndex(Z_INDEX.MAX)
     transitionSprite:setIgnoresDrawOffset(true)
     transitionSprite:add()
     -- TODO: is this really necessary if we're also returning it? or vice versa?

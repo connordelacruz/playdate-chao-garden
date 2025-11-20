@@ -113,6 +113,8 @@ function StatusPanel:init(panelWidth)
     self:setCenter(0, 0)
     -- Left side of the screen
     self:moveTo(0, 0)
+    -- UI layer 1
+    self:setZIndex(Z_INDEX.UI_LAYER_1)
 
     self:add()
 end
@@ -307,7 +309,7 @@ function EditNameClickTarget:init(statusPanel, chao)
     self:setTag(TAGS.CLICK_TARGET)
 
     -- Set Z-index to a high value, but not as high as the cursor
-    self:setZIndex(100)
+    self:setZIndex(Z_INDEX.UI_LAYER_2)
     -- Invisible by default
     self:setVisible(false)
 
@@ -394,7 +396,7 @@ function EditNameTextInput:init(inputText, width)
 
     self:setCenter(0, 0.5)
     self:moveTo(0, SCREEN_CENTER_Y)
-    self:setZIndex(999)
+    self:setZIndex(Z_INDEX.TOP)
 end
 
 function EditNameTextInput:renderUI()

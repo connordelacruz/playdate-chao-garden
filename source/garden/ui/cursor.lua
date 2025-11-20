@@ -70,7 +70,7 @@ function Cursor:init(startX, startY)
     -- Speed of the cursor when moving (px / sec)
     self.speed = 200
     -- Cursor should appear above most sprites
-    self:setZIndex(999)
+    self:setZIndex(Z_INDEX.TOP)
     -- --------------------------------------------------------------------------------
     -- State
     -- --------------------------------------------------------------------------------

@@ -2,10 +2,44 @@ local pd <const> = playdate
 local gfx <const> = pd.graphics
 
 -- ================================================================================
+-- Cursor States
+-- ================================================================================
+
+-- --------------------------------------------------------------------------------
+-- Generic cursor state with common constructor
+-- --------------------------------------------------------------------------------
+class('CursorState').extends('State')
+
+function CursorState:init(cursor)
+    self.cursor = cursor
+end
+
+-- --------------------------------------------------------------------------------
+-- Active:
+-- - D-pad moves cursor
+-- - When cursor is not moving, A clicks
+-- --------------------------------------------------------------------------------
+local kActiveState <const> = 'active'
+class('CursorActiveState').extends('CursorState')
+
+function CursorActiveState:enter()
+    self.cursor:setPointerImage()
+end
+
+function CursorActiveState:update()
+    -- Handle D-pad input
+    local isMoving = self.cursor:handleMovement()
+    -- If stationary, handle A button input
+    if not isMoving then
+        -- TODO: use some sort of return value to figure out potential state changes
+        self.cursor:handleClick()
+    end
+end
+
+-- ================================================================================
 -- Cursor Sprite Class
 -- ================================================================================
--- TODO: implement states
-class('Cursor').extends(gfx.sprite)
+class('Cursor').extends('FSMSprite')
 
 function Cursor:init(startX, startY)
     Cursor.super.init(self)
@@ -16,31 +50,81 @@ function Cursor:init(startX, startY)
     -- Spritesheet indices
     self.pointerSpriteIndex = 1
     self.grabSpriteIndex = 2
-    self.hoverSpriteIndex = 3
-    self.petSpriteIndex = 4
-    self:setImage(self.spritesheet[self.pointerSpriteIndex])
+    self.dropSpriteIndex = 3
+    self.pettingSpriteIndex = 4
+    -- --------------------------------------------------------------------------------
+    -- Properties
+    -- --------------------------------------------------------------------------------
+    -- Speed of the cursor when moving (px / sec)
+    self.speed = 200
+    -- Cursor should appear above most sprites
+    self:setZIndex(999)
+    -- --------------------------------------------------------------------------------
+    -- State
+    -- --------------------------------------------------------------------------------
+    self.states = {
+        [kActiveState] = CursorActiveState(self),
+    }
+    self:setInitialState(kActiveState)
     -- --------------------------------------------------------------------------------
     -- Collision
     -- --------------------------------------------------------------------------------
     self:setCollideRect(0, 0, self:getSize())
     self:setTag(TAGS.CURSOR)
     -- --------------------------------------------------------------------------------
-    -- Properties
-    -- --------------------------------------------------------------------------------
-    -- Speed of the cursor when moving (px / sec)
-    self.speed = 200
-    -- --------------------------------------------------------------------------------
     -- Initialization
     -- --------------------------------------------------------------------------------
-    -- Cursor should appear above most sprites
-    self:setZIndex(999)
-
     self:moveTo(startX, startY)
     self:add()
 end
 
-function Cursor:update()
-    local current, pressed, _ = pd.getButtonState()
+-- --------------------------------------------------------------------------------
+-- Image setters
+-- --------------------------------------------------------------------------------
+
+function Cursor:setImageFromSpritesheet(spriteIndex)
+    self:setImage(self.spritesheet[spriteIndex])
+end
+
+function Cursor:setPointerImage()
+    self:setImageFromSpritesheet(self.pointerSpriteIndex)
+end
+
+function Cursor:setGrabImage()
+    self:setImageFromSpritesheet(self.grabSpriteIndex)
+end
+
+function Cursor:setDropImage()
+    self:setImageFromSpritesheet(self.dropSpriteIndex)
+end
+
+function Cursor:setPettingImage()
+    self:setImageFromSpritesheet(self.pettingSpriteIndex)
+end
+
+-- --------------------------------------------------------------------------------
+-- Collision
+-- --------------------------------------------------------------------------------
+
+function Cursor:collisionResponse(other)
+    -- Overlap by default
+    local toReturn = gfx.sprite.kCollisionTypeOverlap
+    -- Freeze if we hit the edges of the screen
+    if other:getTag() == TAGS.SCREEN_BOUNDARY then
+        toReturn = gfx.sprite.kCollisionTypeFreeze
+    end
+    return toReturn
+end
+
+-- --------------------------------------------------------------------------------
+-- Input Handling
+-- --------------------------------------------------------------------------------
+
+-- Handle D-pad input to move cursor.
+-- Returns true if cursor moved this frame, otherwise false
+function Cursor:handleMovement()
+    local isMoving = false
+    local current, _, _ = pd.getButtonState()
     local dx = 0
     local dy = 0
     -- Determine direction cursor should move
@@ -59,6 +143,7 @@ function Cursor:update()
 
     -- Handle movement
     if dx ~= 0 or dy ~=0 then
+        isMoving = true
         local distance = self.speed * DELTA_TIME
         -- Divide distance by square root of 2 for diagonal movement
         if dx ~= 0 and dy ~= 0 then
@@ -73,28 +158,22 @@ function Cursor:update()
         if DEBUG_MANAGER:isFlagSet(DEBUG_FLAGS.printCursorCoordinates) then
             print('cursor @ (' .. self.x .. ',' .. self.y ..')')
         end
-    else
-        -- If stationary and A is pressed, attempt to click
-        if (pressed & pd.kButtonA) > 0 then
-            local overlapping = self:overlappingSprites()
-            for _,other in pairs(overlapping) do
-                -- TODO: array of clickable tags
-                if other:getTag() == TAGS.CLICK_TARGET then
-                    -- TODO: ensure click() exists and is callable
-                    other:click()
-                    break
-                end
+    end
+
+    return isMoving
+end
+
+-- TODO: return something to indicate what was clicked idk
+function Cursor:handleClick()
+    if pd.buttonJustPressed(pd.kButtonA) then
+        local overlapping = self:overlappingSprites()
+        for _, other in pairs(overlapping) do
+            -- TODO: array of clickable tags
+            if other:getTag() == TAGS.CLICK_TARGET then
+                -- TODO: ensure click() exists and is callable
+                other:click()
+                break
             end
         end
     end
-end
-
-function Cursor:collisionResponse(other)
-    -- Overlap by default
-    local toReturn = gfx.sprite.kCollisionTypeOverlap
-    -- Freeze if we hit the edges of the screen
-    if other:getTag() == TAGS.SCREEN_BOUNDARY then
-        toReturn = gfx.sprite.kCollisionTypeFreeze
-    end
-    return toReturn
 end

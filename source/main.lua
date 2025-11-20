@@ -11,6 +11,7 @@ import 'toyboxes'
 -- Common stuff
 import 'globals'
 import 'util/debug'
+import 'util/data-manager'
 import 'util/state'
 import 'util/scene-manager'
 -- Chao
@@ -29,10 +30,19 @@ DEBUG_MANAGER = DebugManager()
 -- --------------------------------------------------------------------------------
 -- Debug Options:
 -- --------------------------------------------------------------------------------
+-- Verbose logging:
+DEBUG_MANAGER:setFlag(DEBUG_FLAGS.verbose)
 -- Skip title scene, go straight into garden:
 DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 -- When cursor moves, print coordinates to console:
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.printCursorCoordinates)
+-- Don't load Chao data on start:
+-- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipLoadingChaoData)
+
+-- ===============================================================================
+-- Save/Load Data
+-- ===============================================================================
+DATA_MANAGER = DataManager()
 
 -- ===============================================================================
 -- Delta Time

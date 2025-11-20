@@ -4,8 +4,10 @@
 
 -- Names for debug options
 local kDebugOptions <const> = {
+    'verbose',
     'skipTitle',
     'printCursorCoordinates',
+    'skipLoadingChaoData',
 }
 -- Bit masks generated from above options
 local function generateDebugMasks()
@@ -42,7 +44,37 @@ function DebugManager:isFlagSet(debugFlag)
 end
 
 -- --------------------------------------------------------------------------------
--- Utility
+-- Logging Utilities
+-- --------------------------------------------------------------------------------
+
+function DebugManager:getIndentString(indentLevel)
+    if type(indentLevel) ~= 'number' or indentLevel < 0 then
+        indentLevel = 0
+    end
+    return string.rep('  ', indentLevel)
+end
+
+-- --------------------------------------------------------------------------------
+-- Verbose Printing
+-- --------------------------------------------------------------------------------
+
+function DebugManager:vPrint(text, indentLevel)
+    if not self:isFlagSet(DEBUG_FLAGS.verbose) then
+        return
+    end
+    local indent = self:getIndentString(indentLevel)
+    print(indent .. text)
+end
+
+function DebugManager:vPrintTable(t, maxDepth)
+    if not self:isFlagSet(DEBUG_FLAGS.verbose) then
+        return
+    end
+    self:printTable(t, maxDepth)
+end
+
+-- --------------------------------------------------------------------------------
+-- Table Logging
 -- --------------------------------------------------------------------------------
 
 -- TODO: use sdk tableDump() instead???
@@ -61,7 +93,7 @@ function DebugManager:tableToString(t, indentLevel, maxDepth)
     if maxDepth == nil then
         maxDepth = 999
     end
-    local indent = string.rep('  ', indentLevel)
+    local indent = self:getIndentString(indentLevel)
     local out = '{'
 
     for k,v in pairs(t) do

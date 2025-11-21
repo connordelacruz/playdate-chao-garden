@@ -300,8 +300,11 @@ function EditNameClickTarget:init(statusPanel, chao)
     self.statusPanel = statusPanel
     self.chao = chao
 
+    -- Rect size/stroke stuff
     self.stroke = 2
+    self.borderRadius = 4
     self.hPadding = self.stroke + 2
+    self.vPadding = self.stroke
     self:updateRect()
 
     -- Collisions
@@ -319,20 +322,23 @@ end
 function EditNameClickTarget:updateRect()
     local nameContainerRect = self.statusPanel.panelUI:get('name-container').rect
     local hPaddingAdding = 2 * self.hPadding
-    self:setSize(nameContainerRect.width + hPaddingAdding, nameContainerRect.height)
+    local vPaddingAdding = 2 * self.vPadding
+    self:setSize(nameContainerRect.width + hPaddingAdding, 
+                 nameContainerRect.height + vPaddingAdding)
     self:moveTo(nameContainerRect:centerPoint())
     self:updateHoverImage()
 end
 
 function EditNameClickTarget:updateHoverImage()
-    local img = gfx.image.new(self:getSize())
+    local w,h = self:getSize()
+    local img = gfx.image.new(w, h)
     gfx.pushContext(img)
         gfx.setLineWidth(self.stroke)
         gfx.setStrokeLocation(gfx.kStrokeInside)
-        gfx.drawRect(0, 0, self:getSize())
+        gfx.drawRoundRect(0, 0, w, h, self.borderRadius)
     gfx.popContext()
     self:setImage(img)
-    self:setCollideRect(0, 0, self:getSize())
+    self:setCollideRect(0, 0, w, h)
 end
 
 function EditNameClickTarget:click(cursor)

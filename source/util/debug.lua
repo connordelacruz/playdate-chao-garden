@@ -8,6 +8,7 @@ local kDebugOptions <const> = {
     'skipTitle',
     'printCursorCoordinates',
     'skipLoadingChaoData',
+    'skipSavingChaoData',
 }
 -- Bit masks generated from above options
 local function generateDebugMasks()

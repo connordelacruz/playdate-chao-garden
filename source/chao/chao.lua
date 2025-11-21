@@ -10,6 +10,88 @@ local gfx <const> = pd.graphics
 -- --------------------------------------------------------------------------------
 -- Filename where Chao.data is saved
 local kDataFilename <const> = 'chao-data'
+-- Default names to pick from when generating blank chao data
+local kDefaultNames <const> = {
+    'Ajax',
+    'Atom',
+    'Bingo',
+    'Brandy',
+    'Bruno',
+    'Bubbles',
+    'Buddy',
+    'Buzzy',
+    'Cash',
+    'Casino',
+    'Chacha',
+    'Chacky',
+    'Chaggy',
+    'Chai',
+    'Chalulu',
+    'Cham',
+    'Champ',
+    'Chang',
+    'Chaofun',
+    'Chaoko',
+    'Chaolin',
+    'Chaorro',
+    'Chaosky',
+    'Chap',
+    'Chapon',
+    'Chappy',
+    'Charon',
+    'Chasm',
+    'Chaz',
+    'Cheng',
+    'Choc',
+    'Cholly',
+    'Chucky',
+    'Cody',
+    'Cuckoo',
+    'DEJIME',
+    'Dash',
+    'Dingy',
+    'Dino',
+    'Dixie',
+    'Echo',
+    'Edge',
+    'Elvis',
+    'Emmy',
+    'Fuzzie',
+    'Groom',
+    'HITM',
+    'Hiya',
+    'Honey',
+    'Jojo',
+    'Keno',
+    'Kosmo',
+    'Loose',
+    'Melody',
+    'NAGOSHI',
+    'OVER',
+    'Papoose',
+    'Peaches',
+    'Pebbles',
+    'Pinky',
+    'Quartz',
+    'Quincy',
+    'ROSSO',
+    'Rascal',
+    'Rocky',
+    'Rover',
+    'Roxy',
+    'Rusty',
+    'SMILEB',
+    'SOUL',
+    'Spike',
+    'Star',
+    'Tango',
+    'Tiny',
+    'WOW',
+    'Woody',
+    'YS',
+    'Zack',
+    'Zippy',
+}
 
 -- --------------------------------------------------------------------------------
 -- Sprite/Action Stuff
@@ -89,9 +171,12 @@ end
 
 function Chao:initData()
     self.data = {
-        name = '',
+        -- Pick random default name
+        name = kDefaultNames[math.random(1, #kDefaultNames)],
+        -- Start with 50% mood and belly
         mood = 50,
         belly = 50,
+        -- Start with all 0's in stats
         stats = {
             swim = {
                 level = 0,
@@ -139,6 +224,10 @@ function Chao:loadData()
 end
 
 function Chao:saveData()
+    if DEBUG_MANAGER:isFlagSet(DEBUG_FLAGS.skipSavingChaoData) then
+        DEBUG_MANAGER:vPrint('Chao: skipSavingChaoData set, will not save data.')
+        return
+    end
     DEBUG_MANAGER:vPrint('Chao:saveData() called. self.data:')
     DEBUG_MANAGER:vPrintTable(self.data)
     pd.datastore.write(self.data, kDataFilename)

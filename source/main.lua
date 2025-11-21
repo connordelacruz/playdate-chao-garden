@@ -30,14 +30,22 @@ DEBUG_MANAGER = DebugManager()
 -- --------------------------------------------------------------------------------
 -- Debug Options:
 -- --------------------------------------------------------------------------------
--- Verbose logging:
+-- Verbose logging.
 DEBUG_MANAGER:setFlag(DEBUG_FLAGS.verbose)
--- Skip title scene, go straight into garden:
+
+-- Skip title scene, go straight into garden.
 DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
--- When cursor moves, print coordinates to console:
+
+-- When cursor moves, print coordinates to console.
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.printCursorCoordinates)
--- Don't load Chao data on start:
+
+-- Don't load Chao data on start. 
+-- NOTE: This gets silly with saving in the simulator,
+--       probably should also set skipSavingChaoData.
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipLoadingChaoData)
+
+-- Don't save Chao data wherever Chao:saveData() would be called.
+-- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipSavingChaoData)
 
 -- ===============================================================================
 -- Save/Load Data

@@ -32,7 +32,7 @@ local kRootPanelStyle <const> = {
     vAlign = playout.kAlignStart,
     hAlign = playout.kAlignCenter,
     paddingTop = 12,
-    paddingBottom = 12,
+    -- paddingBottom = 12,
     paddingLeft = 6,
     paddingRight = 6,
     backgroundColor = gfx.kColorWhite,
@@ -100,7 +100,13 @@ function StatusPanel:init(panelWidth)
     -- --------------------------------------------------------------------------------
     -- To be set after initialization
     self.chao = nil
-    self.rings = 0
+    -- RING_MASTER should have initialized by now, pull initial ring data
+    self.rings = RING_MASTER.rings
+    -- Register listener for when ring value updates
+    RING_MASTER:registerRingListener('status-panel', function (rings)
+        self:setRings(rings)
+    end)
+    -- TODO: removeRingListener() on StatusPanel:remove() !!!!!
 
     -- --------------------------------------------------------------------------------
     -- Image
@@ -119,6 +125,10 @@ function StatusPanel:init(panelWidth)
     self:add()
 end
 
+-- --------------------------------------------------------------------------------
+-- Setters
+-- --------------------------------------------------------------------------------
+
 function StatusPanel:setChao(chao)
     self.chao = chao
     self:renderUI()
@@ -128,6 +138,10 @@ function StatusPanel:setRings(rings)
     self.rings = rings
     self:renderUI()
 end
+
+-- --------------------------------------------------------------------------------
+-- Render UI
+-- --------------------------------------------------------------------------------
 
 function StatusPanel:renderUI()
     self.panelUI = playout.tree.new(self:createPanelUI())
@@ -148,6 +162,7 @@ function StatusPanel:createPanelUI()
         self:createNameUI(),
         self:createMoodBellyUI(),
         self:createStatsUI(),
+        self:createRingCountUI(),
     })
 end
 
@@ -168,6 +183,7 @@ function StatusPanel:createNameUI()
     )
 end
 
+-- Mood/Belly sections
 function StatusPanel:createMoodBellyUI()
     local mood = self.chao == nil and 0 or self.chao.data.mood
     local belly = self.chao == nil and 0 or self.chao.data.belly
@@ -184,6 +200,7 @@ function StatusPanel:createMoodBellyUI()
     )
 end
 
+-- All stats sections
 function StatusPanel:createStatsUI()
     local stats = {}
     if self.chao ~= nil then
@@ -212,12 +229,14 @@ function StatusPanel:createStatsUI()
     )
 end
 
+-- Create a single stat section
 function StatusPanel:createStatUI(statName, statData)
     local progress = statData == nil and 0 or statData.progress
     local level = statData == nil and 0 or statData.level
     return self:createBarUI(statName, progress, level)
 end
 
+-- Create a bar UI section (mood/belly + stats)
 function StatusPanel:createBarUI(title, progress, level)
     -- Title and optional LV display
     local titleText = text(
@@ -255,6 +274,7 @@ function StatusPanel:createBarUI(title, progress, level)
     )
 end
 
+-- Create a progress bar box
 function StatusPanel:createProgressBar(progress)
     -- Convert progress percent to rounded down int
     local progressInt = progress // 10
@@ -276,6 +296,27 @@ function StatusPanel:createProgressBar(progress)
         progressBarChildren)
 end
 
+function StatusPanel:createRingCountUI()
+    -- TODO: add sprite n shit, polish up, move styles to constants
+    local ringText = text(
+        'Rings: ' .. self.rings,
+        {
+            fontFamily = kFonts.level,
+            alignment = kTextAlignment.center,
+        }
+    )
+    return box({
+            hAlign = playout.kAlignCenter,
+            vAlign = playout.kAlignEnd,
+            -- TODO: anything > 3 pushes it off screen...
+            paddingTop = 3,
+        },
+        {
+            ringText,
+        })
+end
+
+-- TODO: move to below section, add subsections to separate this from class definitions
 -- Create/update edit name click target
 function StatusPanel:createEditNameClickTarget()
     if self.panelUI == nil then

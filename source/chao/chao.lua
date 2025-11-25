@@ -119,7 +119,7 @@ function Chao:init(startX, startY)
     -- --------------------------------------------------------------------------------
     -- Set initial data
     self:initData()
-    -- Attempt to load save data
+    -- Attempt to load data
     self:loadData()
     -- Register save function
     DATA_MANAGER:registerSaveFunction(kDataFilename, function ()

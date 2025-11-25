@@ -14,6 +14,8 @@ import 'util/debug'
 import 'util/data-manager'
 import 'util/state'
 import 'util/scene-manager'
+-- Game stuff
+import 'game/rings'
 -- Chao
 import 'chao/main'
 -- Scenes
@@ -51,6 +53,11 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 -- Save/Load Data
 -- ===============================================================================
 DATA_MANAGER = DataManager()
+
+-- ===============================================================================
+-- Rings
+-- ===============================================================================
+RING_MASTER = RingMaster()
 
 -- ===============================================================================
 -- Delta Time

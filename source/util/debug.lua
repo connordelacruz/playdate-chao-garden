@@ -4,9 +4,16 @@
 
 -- Names for debug options
 local kDebugOptions <const> = {
+    -- General
     'verbose',
+    'enableDebugUpdateFunctions',
+    -- Scenes
     'skipTitle',
+    -- Rings
+    'crankToSetRings',
+    -- Garden
     'printCursorCoordinates',
+    -- Chao
     'skipLoadingChaoData',
     'skipSavingChaoData',
 }
@@ -28,6 +35,7 @@ class('DebugManager').extends()
 
 function DebugManager:init()
     self.flags = 0
+    self.updateFunctions = {}
 end
 
 -- --------------------------------------------------------------------------------
@@ -42,6 +50,22 @@ end
 
 function DebugManager:isFlagSet(debugFlag)
     return (self.flags & debugFlag) > 0
+end
+
+-- --------------------------------------------------------------------------------
+-- Debug Update Functions
+-- --------------------------------------------------------------------------------
+
+function DebugManager:registerDebugUpdateFunction(key, func)
+    if self.updateFunctions[key] == nil and type(func) == 'function' then
+        self.updateFunctions[key] = func
+    end
+end
+
+function DebugManager:update()
+    for _,func in pairs(self.updateFunctions) do
+        func()
+    end
 end
 
 -- --------------------------------------------------------------------------------

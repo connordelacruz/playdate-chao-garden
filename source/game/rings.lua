@@ -37,6 +37,13 @@ function RingMaster:init()
     DATA_MANAGER:registerSaveFunction(kDataFilename, function ()
         self:saveData()
     end)
+
+    -- Debug: Crank to set rings
+    if DEBUG_MANAGER:isFlagSet(DEBUG_FLAGS.crankToSetRings) then
+        DEBUG_MANAGER:registerDebugUpdateFunction('crankToSetRings', function ()
+            self:crankinItUpdate()
+        end)
+    end
 end
 
 -- --------------------------------------------------------------------------------
@@ -126,4 +133,16 @@ end
 -- Returns true if self.rings - val > 0, false otherwise.
 function RingMaster:canAfford(val)
     return self.rings - val >= 0
+end
+
+-- --------------------------------------------------------------------------------
+-- Debug
+-- --------------------------------------------------------------------------------
+
+-- Debug Update Function: Use crank to modify ring count.
+function RingMaster:crankinItUpdate()
+    local change,_ = pd.getCrankChange()
+    if change ~= 0 then
+        self:addRings(math.floor(change))
+    end
 end

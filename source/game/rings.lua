@@ -50,6 +50,13 @@ end
 -- Save/Load Data
 -- --------------------------------------------------------------------------------
 
+function RingMaster:saveData()
+    local data = {rings = self.rings}
+    DEBUG_MANAGER:vPrint('RingMaster:saveData() called. Data:')
+    DEBUG_MANAGER:vPrintTable(data)
+    pd.datastore.write(data, kDataFilename)
+end
+
 function RingMaster:loadData()
     local loadedData = pd.datastore.read(kDataFilename)
     if loadedData == nil then
@@ -58,13 +65,6 @@ function RingMaster:loadData()
     end
     self.rings = loadedData.rings
     DEBUG_MANAGER:vPrint('RingMaster: save data found. Ring count = ' .. self.rings)
-end
-
-function RingMaster:saveData()
-    local data = {rings = self.rings}
-    DEBUG_MANAGER:vPrint('RingMaster:saveData() called. Data:')
-    DEBUG_MANAGER:vPrintTable(data)
-    pd.datastore.write(data, kDataFilename)
 end
 
 -- --------------------------------------------------------------------------------

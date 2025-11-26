@@ -37,14 +37,14 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.verbose)
 
 -- Enable debug update functions that will be called in the main update() loop.
 -- These must be registered via DEBUG_MANAGER:registerDebugUpdateFunction().
-DEBUG_MANAGER:setFlag(DEBUG_FLAGS.enableDebugUpdateFunctions)
+-- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.enableDebugUpdateFunctions)
 
 -- Skip title scene, go straight into garden.
 DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 
 -- Use the crank to add/remove rings.
 -- NOTE: enableDebugUpdateFunctions must also be enabled!
-DEBUG_MANAGER:setFlag(DEBUG_FLAGS.crankToSetRings)
+-- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.crankToSetRings)
 
 -- When cursor moves, print coordinates to console.
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.printCursorCoordinates)

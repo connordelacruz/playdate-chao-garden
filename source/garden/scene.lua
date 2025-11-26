@@ -1,6 +1,8 @@
 import 'garden/background'
 import 'garden/ui/cursor'
 import 'garden/ui/status-panel'
+import 'garden/items/item-manager'
+import 'garden/items/item'
 
 local pd <const> = playdate
 local gfx <const> = pd.graphics
@@ -21,6 +23,8 @@ function GardenScene:init()
     local gardenCenterX = 400 - (self.bg.width / 2)
     self.chao = Chao(gardenCenterX, SCREEN_CENTER_Y)
     self.statusPanel:setChao(self.chao)
+    -- Item Manager
+    self.itemManager = ItemManager()
     -- Boundary collisions
     self:createBoundaries()
 

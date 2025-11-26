@@ -103,6 +103,7 @@ function StatusPanel:init(panelWidth)
     -- RING_MASTER should have initialized by now, pull initial ring data
     self.rings = RING_MASTER.rings
     -- Register listener for when ring value updates
+    -- TODO: instead of taking (rings), reference RING_MASTER.rings directly
     RING_MASTER:registerRingListener('status-panel', function (rings)
         self:setRings(rings)
     end)

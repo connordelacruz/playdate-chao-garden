@@ -23,6 +23,8 @@ TAG_NAMES = {
     'CURSOR',
     -- Clickable UI
     'CLICK_TARGET',
+    -- Grabbable Item
+    'ITEM',
     -- Edges of the screen
     'SCREEN_BOUNDARY',
     -- Edge of the garden that is not the edge of the screen

@@ -72,6 +72,7 @@ function ItemManager:canAddItem()
     return #self.items < kMaxItems
 end
 
+-- TODO: this might be adding things twice!?
 function ItemManager:addItem(item)
     local success = self:canAddItem()
 
@@ -103,5 +104,12 @@ end
 function ItemManager:updateItemIndexes()
     for i,item in ipairs(self.items) do
         item:setManagerIndex(i)
+    end
+end
+
+-- Mostly for testing, probably won't get used IRL
+function ItemManager:removeAll()
+    for i,_ in ipairs(self.items) do
+        self:removeItem(i)
     end
 end

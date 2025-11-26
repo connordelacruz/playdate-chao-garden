@@ -25,6 +25,7 @@ function GardenScene:init()
     self.statusPanel:setChao(self.chao)
     -- Item Manager
     self.itemManager = ItemManager()
+
     -- Boundary collisions
     self:createBoundaries()
 

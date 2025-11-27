@@ -92,9 +92,13 @@ function CursorGrabbingState:update()
     self.cursor:handleGrabbedItemMovement()
     -- TODO: self.cursor:attemptToPlaceItem() or whatever:
     -- If stationary, handle A button input
-    -- if not isMoving then
-    --     self.cursor:handleClick()
-    -- end
+    if not isMoving then
+        self.cursor:handleGrabbedItemClick()
+    end
+end
+
+function CursorGrabbingState:exit()
+    self.cursor.item = nil
 end
 
 -- ================================================================================
@@ -253,6 +257,12 @@ function Cursor:handleGrabbedItemMovement()
 end
 
 -- TODO: placeItem() (with validation). set self.item = nil and go back to active state
+function Cursor:placeItem()
+    -- TODO: need to handle moving vs stationary item pos for saving/loading
+    -- TODO: also make sure we're placing it in a valid spot, need to add mo collision shit for the pond and whatever
+    -- TODO: also also, if placing near a chao and it's something it can interact with, do that!
+    self:setState(kActiveState)
+end
 
 -- --------------------------------------------------------------------------------
 -- Input Handling
@@ -321,7 +331,9 @@ function Cursor:isTargetClickable(other)
     return isClickable
 end
 
--- Handles clicking on an object
+-- TODO: RENAME THESE TO LIKE checkForClick() or whatever!!
+
+-- Handles clicking on an object when active
 function Cursor:handleClick()
     if pd.buttonJustPressed(pd.kButtonA) then
         local overlapping = self:overlappingSprites()
@@ -331,5 +343,13 @@ function Cursor:handleClick()
                 break
             end
         end
+    end
+end
+
+-- TODO: validation n shit
+-- Handle A press when holding an item
+function Cursor:handleGrabbedItemClick()
+    if pd.buttonJustPressed(pd.kButtonA) then
+        self:placeItem()
     end
 end

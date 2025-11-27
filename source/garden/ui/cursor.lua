@@ -24,6 +24,8 @@ class('CursorActiveState').extends('CursorState')
 
 function CursorActiveState:enter()
     self.cursor:setPointerImage()
+    -- Set default collides with tags
+    self.cursor:setDefaultCollidesWithTags()
 end
 
 function CursorActiveState:update()
@@ -46,6 +48,36 @@ class('CursorDisabledState').extends('CursorState')
 function CursorDisabledState:enter()
     -- Hide cursor
     self.cursor:setVisible(false)
+end
+
+-- --------------------------------------------------------------------------------
+-- Dragging:
+-- - Sprite changes to grab w/ item sprite
+-- - Cursor now collides with SCREEN_BOUNDARY and GARDEN_BOUNDARY
+-- - D-pad moves cursor
+-- - When cursor is not moving, A attempts to place item
+-- --------------------------------------------------------------------------------
+local kDraggingState <const> = 'dragging'
+class('CursorDraggingState').extends('CursorState')
+
+function CursorDraggingState:enter()
+    -- TODO: pass item? Or store in obj prop
+    self.cursor:setGrabImage()
+    -- Cursor should collide with garden boundary when dragging an item
+    self.cursor:setCollidesWithTags({
+        TAGS.SCREEN_BOUNDARY,
+        TAGS.GARDEN_BOUNDARY,
+    })
+end
+
+function CursorDraggingState:update()
+    -- Handle D-pad input
+    local isMoving = self.cursor:handleMovement()
+    -- TODO: self.cursor:attemptToDropItem() or whatever:
+    -- If stationary, handle A button input
+    -- if not isMoving then
+    --     self.cursor:handleClick()
+    -- end
 end
 
 -- ================================================================================
@@ -78,6 +110,7 @@ function Cursor:init(startX, startY)
     self.states = {
         [kActiveState] = CursorActiveState(self),
         [kDisabledState] = CursorDisabledState(self),
+        [kDraggingState] = CursorDraggingState(self),
     }
     self:setInitialState(kActiveState)
     -- --------------------------------------------------------------------------------
@@ -87,6 +120,9 @@ function Cursor:init(startX, startY)
     -- Slightly offset to be closer to pointer finger
     self:setCollideRect(-(width / 4), height / 4, width, height)
     self:setTag(TAGS.CURSOR)
+    -- NOTE: States where collision is a factor should call the relevant function
+    --       to set collides with tags in their enter() function
+
     -- --------------------------------------------------------------------------------
     -- Initialization
     -- --------------------------------------------------------------------------------
@@ -108,6 +144,7 @@ function Cursor:setPointerImage()
     self:setImageFromSpritesheet(self.pointerSpriteIndex)
 end
 
+-- TODO: take item? or check self.item; generate image with grab sprite + item sprite
 function Cursor:setGrabImage()
     self:setImageFromSpritesheet(self.grabSpriteIndex)
 end
@@ -124,11 +161,32 @@ end
 -- Collision
 -- --------------------------------------------------------------------------------
 
+-- Set self.collidesWithTags to the default value.
+function Cursor:setDefaultCollidesWithTags()
+    self.collidesWithTags = {TAGS.SCREEN_BOUNDARY}
+end
+
+-- Allow collides with tags to be overridden by state.
+function Cursor:setCollidesWithTags(tagList)
+    self.collidesWithTags = tagList
+end
+
+-- Check if a collision tag is in collidesWithTags.
+function Cursor:shouldCollideWithTag(tag)
+    -- TODO: can we do caching to make this more efficient?
+    for _,collidesWithTag in ipairs(self.collidesWithTags) do
+        if collidesWithTag == tag then
+            return true
+        end
+    end
+    return false
+end
+
 function Cursor:collisionResponse(other)
     -- Overlap by default
     local toReturn = gfx.sprite.kCollisionTypeOverlap
-    -- Freeze if we hit the edges of the screen
-    if other:getTag() == TAGS.SCREEN_BOUNDARY then
+    -- Freeze if we hit a tag we should collide with
+    if self:shouldCollideWithTag(other:getTag()) then
         toReturn = gfx.sprite.kCollisionTypeFreeze
     end
     return toReturn

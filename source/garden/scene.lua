@@ -54,5 +54,11 @@ function GardenScene:createBoundaries()
         boundarySprite:add()
     end
 
-    -- TODO: chao-specific collision at edge of ui and around the pond
+    -- Additional boundary at the edge between the status UI and the garden
+    local gardenBoundary = gfx.sprite.addEmptyCollisionSprite(
+        self.statusPanel.width, 0, kWallThiccness, SCREEN_HEIGHT
+    )
+    gardenBoundary:setTag(TAGS.GARDEN_BOUNDARY)
+    gardenBoundary:add()
+    self.boundaries[#self.boundaries+1] = gardenBoundary
 end

@@ -2,6 +2,16 @@ local pd <const> = playdate
 local gfx <const> = pd.graphics
 
 -- ================================================================================
+-- Constants
+-- ================================================================================
+-- Collision tags of sprites that can be clicked
+local kClickableTags <const> = {
+    TAGS.CHAO,
+    TAGS.CLICK_TARGET,
+    TAGS.ITEM,
+}
+
+-- ================================================================================
 -- Cursor States
 -- ================================================================================
 
@@ -100,10 +110,14 @@ function Cursor:init(startX, startY)
     -- Properties
     -- --------------------------------------------------------------------------------
     -- Speed of the cursor when moving (px / sec)
-    -- TODO: slight acceleration
     self.speed = 250
     -- Cursor should appear above most sprites
     self:setZIndex(Z_INDEX.TOP)
+    -- --------------------------------------------------------------------------------
+    -- Instance Variables
+    -- --------------------------------------------------------------------------------
+    -- When an item is being dragged, this should be set to the grabbed item object
+    self.item = nil
     -- --------------------------------------------------------------------------------
     -- State
     -- --------------------------------------------------------------------------------
@@ -115,14 +129,14 @@ function Cursor:init(startX, startY)
     self:setInitialState(kActiveState)
     -- --------------------------------------------------------------------------------
     -- Collision
+    --
+    -- NOTE: States where collision is a factor should call the relevant function
+    --       to set collides with tags in their enter() function
     -- --------------------------------------------------------------------------------
     local width, height = self:getSize()
     -- Slightly offset to be closer to pointer finger
     self:setCollideRect(-(width / 4), height / 4, width, height)
     self:setTag(TAGS.CURSOR)
-    -- NOTE: States where collision is a factor should call the relevant function
-    --       to set collides with tags in their enter() function
-
     -- --------------------------------------------------------------------------------
     -- Initialization
     -- --------------------------------------------------------------------------------
@@ -251,14 +265,31 @@ function Cursor:handleMovement()
     return isMoving
 end
 
--- TODO: return something to indicate what was clicked idk
+-- Check if a sprite's collision tag is in our list of clickables.
+function Cursor:isTagClickable(otherTag)
+    -- TODO: caching? map from tag -> true?
+    for _,clickableTag in ipairs(kClickableTags) do
+        if otherTag == clickableTag then
+            return true
+        end
+    end
+    return false
+end
+
+-- Check if a sprite with collisions is clickable
+function Cursor:isTargetClickable(other)
+    local isClickable = self:isTagClickable(other:getTag())
+    if isClickable then
+        isClickable = other['click'] ~= nil and type(other['click']) == 'function'
+    end
+    return isClickable
+end
+
 function Cursor:handleClick()
     if pd.buttonJustPressed(pd.kButtonA) then
         local overlapping = self:overlappingSprites()
-        for _, other in pairs(overlapping) do
-            -- TODO: array of clickable tags
-            if other:getTag() == TAGS.CLICK_TARGET then
-                -- TODO: ensure click() exists and is callable
+        for _, other in ipairs(overlapping) do
+            if self:isTargetClickable(other) then
                 other:click(self)
                 break
             end

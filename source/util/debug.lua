@@ -11,8 +11,10 @@ local kDebugOptions <const> = {
     'skipTitle',
     -- Rings
     'crankToSetRings',
-    -- Garden
+    -- Cursor
     'printCursorCoordinates',
+    -- Items
+    'addTestItemIfNoneLoaded',
     -- Chao
     'skipLoadingChaoData',
     'skipSavingChaoData',

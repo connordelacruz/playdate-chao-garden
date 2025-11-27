@@ -62,6 +62,12 @@ function ItemManager:loadData()
         self:addItem(item)
         DEBUG_MANAGER:vPrint('- '..itemData.className..'('..itemData.x..','..itemData.y..')', 1)
     end
+    -- DEBUG: Create a fruit if nothing else was loaded
+    if DEBUG_MANAGER:isFlagSet(DEBUG_FLAGS.addTestItemIfNoneLoaded) and #self.items == 0 then
+        DEBUG_MANAGER:vPrint('ItemManager: Adding free fruit for testing.')
+        local item = FruitA(300, 64, self)
+        self:addItem(item)
+    end
 end
 
 -- --------------------------------------------------------------------------------

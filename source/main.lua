@@ -49,6 +49,9 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 -- When cursor moves, print coordinates to console.
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.printCursorCoordinates)
 
+-- If no items were loaded, add a fruit to the garden for testing.
+DEBUG_MANAGER:setFlag(DEBUG_FLAGS.addTestItemIfNoneLoaded)
+
 -- Don't load Chao data on start. 
 -- NOTE: This gets silly with saving in the simulator,
 --       probably should also set skipSavingChaoData.

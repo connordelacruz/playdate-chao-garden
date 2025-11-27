@@ -36,6 +36,9 @@ function CursorActiveState:enter()
     self.cursor:setPointerImage()
     -- Set default collides with tags
     self.cursor:setDefaultCollidesWithTags()
+    -- Set pointer collision rect
+    -- TODO: may cause problems if this changes too close to a wall...
+    self.cursor:setPointerCollisionRect()
 end
 
 function CursorActiveState:update()
@@ -61,29 +64,33 @@ function CursorDisabledState:enter()
 end
 
 -- --------------------------------------------------------------------------------
--- Dragging:
+-- Grabbing:
 -- - Sprite changes to grab w/ item sprite
 -- - Cursor now collides with SCREEN_BOUNDARY and GARDEN_BOUNDARY
 -- - D-pad moves cursor
 -- - When cursor is not moving, A attempts to place item
 -- --------------------------------------------------------------------------------
-local kDraggingState <const> = 'dragging'
-class('CursorDraggingState').extends('CursorState')
+local kGrabbingState <const> = 'grabbing'
+class('CursorGrabbingState').extends('CursorState')
 
-function CursorDraggingState:enter()
+function CursorGrabbingState:enter()
     -- TODO: pass item? Or store in obj prop
     self.cursor:setGrabImage()
-    -- Cursor should collide with garden boundary when dragging an item
+    -- Cursor should collide with garden boundary when grabbing an item
     self.cursor:setCollidesWithTags({
         TAGS.SCREEN_BOUNDARY,
         TAGS.GARDEN_BOUNDARY,
     })
+    -- Update collision rect to be centered
+    -- TODO: I imagine this could pose problems when item is close to a wall
+    self.cursor:setGrabbingCollisionRect()
 end
 
-function CursorDraggingState:update()
+function CursorGrabbingState:update()
     -- Handle D-pad input
     local isMoving = self.cursor:handleMovement()
-    -- TODO: self.cursor:attemptToDropItem() or whatever:
+    self.cursor:handleGrabbedItemMovement()
+    -- TODO: self.cursor:attemptToPlaceItem() or whatever:
     -- If stationary, handle A button input
     -- if not isMoving then
     --     self.cursor:handleClick()
@@ -124,7 +131,7 @@ function Cursor:init(startX, startY)
     self.states = {
         [kActiveState] = CursorActiveState(self),
         [kDisabledState] = CursorDisabledState(self),
-        [kDraggingState] = CursorDraggingState(self),
+        [kGrabbingState] = CursorGrabbingState(self),
     }
     self:setInitialState(kActiveState)
     -- --------------------------------------------------------------------------------
@@ -132,10 +139,9 @@ function Cursor:init(startX, startY)
     --
     -- NOTE: States where collision is a factor should call the relevant function
     --       to set collides with tags in their enter() function
+    -- 
+    -- NOTE: States should set collision rect on enter()
     -- --------------------------------------------------------------------------------
-    local width, height = self:getSize()
-    -- Slightly offset to be closer to pointer finger
-    self:setCollideRect(-(width / 4), height / 4, width, height)
     self:setTag(TAGS.CURSOR)
     -- --------------------------------------------------------------------------------
     -- Initialization
@@ -158,7 +164,6 @@ function Cursor:setPointerImage()
     self:setImageFromSpritesheet(self.pointerSpriteIndex)
 end
 
--- TODO: take item? or check self.item; generate image with grab sprite + item sprite
 function Cursor:setGrabImage()
     self:setImageFromSpritesheet(self.grabSpriteIndex)
 end
@@ -174,6 +179,18 @@ end
 -- --------------------------------------------------------------------------------
 -- Collision
 -- --------------------------------------------------------------------------------
+
+-- Set collision rect for active cursor (slightly offset to be closer to pointer finger)
+function Cursor:setPointerCollisionRect()
+    local width, height = self:getSize()
+    self:setCollideRect(-(width / 4), height / 4, width, height)
+end
+
+-- Set collision rect to be centered on item for grabbing cursor.
+function Cursor:setGrabbingCollisionRect()
+    -- TODO: make height / 2 y pos here consistent with handle grabbed item move y pos
+    self:setCollideRect(0, self.height / 2, self:getSize())
+end
 
 -- Set self.collidesWithTags to the default value.
 function Cursor:setDefaultCollidesWithTags()
@@ -217,6 +234,25 @@ end
 function Cursor:enable()
     self:setState(kActiveState)
 end
+
+function Cursor:grabItem(item)
+    self.item = item
+    self:setState(kGrabbingState)
+end
+
+-- --------------------------------------------------------------------------------
+-- Grabbing Items
+-- --------------------------------------------------------------------------------
+
+-- Call after handleMovement() in grabbing state.
+-- We are assuming self.item was set to the grabbed item object by now.
+-- Moves the item sprite relative to cursor position.
+function Cursor:handleGrabbedItemMovement()
+    -- TODO: y pos modifier should maybe be a constant? So we can use it for collide rect
+    self.item:moveTo(self.x, self.y + self.height / 2)
+end
+
+-- TODO: placeItem() (with validation). set self.item = nil and go back to active state
 
 -- --------------------------------------------------------------------------------
 -- Input Handling
@@ -285,6 +321,7 @@ function Cursor:isTargetClickable(other)
     return isClickable
 end
 
+-- Handles clicking on an object
 function Cursor:handleClick()
     if pd.buttonJustPressed(pd.kButtonA) then
         local overlapping = self:overlappingSprites()

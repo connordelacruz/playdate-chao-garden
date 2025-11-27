@@ -26,6 +26,11 @@ function Item:delete()
     self.itemManager:removeItem(self.index)
 end
 
+function Item:click(cursor)
+    -- TODO: when being clicked and dragged, indicate this to the itemManager so x/y pos is not saved until dropped!!!!!
+    cursor:grabItem(self)
+end
+
 -- ================================================================================
 -- Fruits
 -- ================================================================================

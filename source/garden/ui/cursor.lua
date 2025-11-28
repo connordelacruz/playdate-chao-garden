@@ -71,14 +71,15 @@ local kGrabbingState <const> = 'grabbing'
 class('CursorGrabbingState').extends('CursorState')
 
 function CursorGrabbingState:enter()
-    -- TODO: pass item? Or store in obj prop
     self.cursor:setGrabImage()
     -- Cursor should collide with garden boundary when grabbing an item
     self.cursor:setCollidesWithTags({
         TAGS.SCREEN_BOUNDARY,
         TAGS.GARDEN_BOUNDARY,
     })
-    -- TODO: check if cursor is now overlapping with objects it should collide with, move it so it doesn't glitch out
+    -- Cursor may be colliding with rects with tags added above.
+    -- Call this to line it up with the target item first.
+    self.cursor:setInitialGrabPosition()
 end
 
 function CursorGrabbingState:update()
@@ -143,6 +144,8 @@ function Cursor:init(startX, startY)
     local width, height = self:getSize()
     self:setCollideRect(-(width / 4), height / 4, width, height)
     self:setTag(TAGS.CURSOR)
+    -- Set center to line up with collide rect
+    self:setCenter(0.25, 0.75)
     -- --------------------------------------------------------------------------------
     -- Item Grabbing
     -- --------------------------------------------------------------------------------
@@ -242,9 +245,14 @@ end
 -- Grabbing Items
 -- --------------------------------------------------------------------------------
 
--- TODO: DOC
-function Cursor:fixInitialGrabPosition()
-    -- TODO: implement!!!
+-- To try and ensure that the cursor isn't overlapping with something that
+-- it should collide with when grabbing, we move it so that its collision rect
+-- lines up with the target item when its state changes.
+-- NOTE: self.item is assumed to be set.
+function Cursor:setInitialGrabPosition()
+    -- Cursor center is set to line up with the collide rect.
+    -- So if we move the cursor to line up with the item, its collision will align with it too.
+    self:moveTo(self.item.x, self.item.y)
 end
 
 -- Call after handleMovement() in grabbing state.
@@ -252,8 +260,8 @@ end
 -- Moves the item sprite relative to cursor position.
 function Cursor:handleGrabbedItemMovement()
     self.item:moveTo(
-        self.x + self.grabbedItemPositionOffsets.x,
-        self.y + self.grabbedItemPositionOffsets.y
+        self.x,
+        self.y
     )
 end
 

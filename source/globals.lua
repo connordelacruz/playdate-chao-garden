@@ -29,6 +29,8 @@ TAG_NAMES = {
     'SCREEN_BOUNDARY',
     -- Edge of the garden that is not the edge of the screen
     'GARDEN_BOUNDARY',
+    -- Garden pond boundaries
+    'POND',
 }
 TAGS = {}
 for i,tag in ipairs(TAG_NAMES) do

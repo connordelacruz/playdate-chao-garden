@@ -19,5 +19,34 @@ function GardenBackground:init()
     -- Right side of the screen
     self:moveTo(SCREEN_WIDTH, SCREEN_HEIGHT)
 
+    -- Setup pond collisions
+    self:createPondBoundaries()
+
     self:add()
+end
+
+-- Painstakingly hard-coded from guides setup in Gimp lol
+function GardenBackground:createPondBoundaries()
+    local bgBoundsRect = self:getBoundsRect()
+    self.pondBoundaries = {}
+    self.pondBoundaries[#self.pondBoundaries+1] = gfx.sprite.addEmptyCollisionSprite(
+        bgBoundsRect.x, 179, 24, bgBoundsRect.height - 179
+    )
+    self.pondBoundaries[#self.pondBoundaries+1] = gfx.sprite.addEmptyCollisionSprite(
+        bgBoundsRect.x + 24, 170, 96 - 24, bgBoundsRect.height - 170
+    )
+    self.pondBoundaries[#self.pondBoundaries+1] = gfx.sprite.addEmptyCollisionSprite(
+        bgBoundsRect.x + 96, 198, 152 - 96, bgBoundsRect.height - 198
+    )
+    self.pondBoundaries[#self.pondBoundaries+1] = gfx.sprite.addEmptyCollisionSprite(
+        bgBoundsRect.x + 96, 187, 138 - 96, 198 - 187
+    )
+    self.pondBoundaries[#self.pondBoundaries+1] = gfx.sprite.addEmptyCollisionSprite(
+        bgBoundsRect.x + 96, 179, 125 - 96, 187 - 179
+    )
+
+    for _,boundarySprite in ipairs(self.pondBoundaries) do
+        boundarySprite:setTag(TAGS.POND)
+        boundarySprite:add()
+    end
 end

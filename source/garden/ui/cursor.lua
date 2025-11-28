@@ -36,9 +36,6 @@ function CursorActiveState:enter()
     self.cursor:setPointerImage()
     -- Set default collides with tags
     self.cursor:setDefaultCollidesWithTags()
-    -- Set pointer collision rect
-    -- TODO: may cause problems if this changes too close to a wall...
-    self.cursor:setPointerCollisionRect()
 end
 
 function CursorActiveState:update()
@@ -81,9 +78,7 @@ function CursorGrabbingState:enter()
         TAGS.SCREEN_BOUNDARY,
         TAGS.GARDEN_BOUNDARY,
     })
-    -- Update collision rect to be centered
-    -- TODO: I imagine this could pose problems when item is close to a wall
-    self.cursor:setGrabbingCollisionRect()
+    -- TODO: check if cursor is now overlapping with objects it should collide with, move it so it doesn't glitch out
 end
 
 function CursorGrabbingState:update()
@@ -143,10 +138,20 @@ function Cursor:init(startX, startY)
     --
     -- NOTE: States where collision is a factor should call the relevant function
     --       to set collides with tags in their enter() function
-    -- 
-    -- NOTE: States should set collision rect on enter()
     -- --------------------------------------------------------------------------------
+    local width, height = self:getSize()
+    self:setCollideRect(-(width / 4), height / 4, width, height)
     self:setTag(TAGS.CURSOR)
+    -- --------------------------------------------------------------------------------
+    -- Item Grabbing
+    -- --------------------------------------------------------------------------------
+    -- We're gonna center the grabbed item in the collide rect.
+    -- Rect coords are relative to sprite coords, so we'll ues these as offsets
+    local collideRect = self:getCollideRect()
+    self.grabbedItemPositionOffsets = {
+        x = collideRect.x,
+        y = collideRect.y,
+    }
     -- --------------------------------------------------------------------------------
     -- Initialization
     -- --------------------------------------------------------------------------------
@@ -183,18 +188,6 @@ end
 -- --------------------------------------------------------------------------------
 -- Collision
 -- --------------------------------------------------------------------------------
-
--- Set collision rect for active cursor (slightly offset to be closer to pointer finger)
-function Cursor:setPointerCollisionRect()
-    local width, height = self:getSize()
-    self:setCollideRect(-(width / 4), height / 4, width, height)
-end
-
--- Set collision rect to be centered on item for grabbing cursor.
-function Cursor:setGrabbingCollisionRect()
-    -- TODO: make height / 2 y pos here consistent with handle grabbed item move y pos
-    self:setCollideRect(0, self.height / 2, self:getSize())
-end
 
 -- Set self.collidesWithTags to the default value.
 function Cursor:setDefaultCollidesWithTags()
@@ -252,8 +245,10 @@ end
 -- We are assuming self.item was set to the grabbed item object by now.
 -- Moves the item sprite relative to cursor position.
 function Cursor:handleGrabbedItemMovement()
-    -- TODO: y pos modifier should maybe be a constant? So we can use it for collide rect
-    self.item:moveTo(self.x, self.y + self.height / 2)
+    self.item:moveTo(
+        self.x + self.grabbedItemPositionOffsets.x,
+        self.y + self.grabbedItemPositionOffsets.y
+    )
 end
 
 -- TODO: placeItem() (with validation). set self.item = nil and go back to active state

@@ -53,12 +53,4 @@ function GardenScene:createBoundaries()
         boundarySprite:setTag(TAGS.SCREEN_BOUNDARY)
         boundarySprite:add()
     end
-
-    -- Additional boundary at the edge between the status UI and the garden
-    local gardenBoundary = gfx.sprite.addEmptyCollisionSprite(
-        self.statusPanel.width, 0, kWallThiccness, SCREEN_HEIGHT
-    )
-    gardenBoundary:setTag(TAGS.GARDEN_BOUNDARY)
-    gardenBoundary:add()
-    self.boundaries[#self.boundaries+1] = gardenBoundary
 end

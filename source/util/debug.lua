@@ -93,6 +93,10 @@ function DebugManager:vPrint(text, indentLevel)
     print(indent .. text)
 end
 
+function DebugManager:vPrintObject(obj)
+    print(tostring(obj))
+end
+
 function DebugManager:vPrintTable(t, maxDepth)
     if not self:isFlagSet(DEBUG_FLAGS.verbose) then
         return

@@ -115,13 +115,18 @@ function StatusPanel:init(panelWidth)
     self.panelWidth = panelWidth
     -- Setup Playout elements for UI
     self:renderUI()
-
     -- Draw from top left corner
     self:setCenter(0, 0)
     -- Left side of the screen
     self:moveTo(0, 0)
     -- UI layer 1
     self:setZIndex(Z_INDEX.UI_LAYER_1)
+    -- --------------------------------------------------------------------------------
+    -- Collision
+    -- --------------------------------------------------------------------------------
+    -- The status panel marks the edge of the garden, so we want collisions
+    self:setCollideRect(0, 0, self:getSize())
+    self:setTag(TAGS.GARDEN_BOUNDARY)
 
     self:add()
 end

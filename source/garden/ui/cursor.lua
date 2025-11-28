@@ -10,6 +10,16 @@ local kClickableTags <const> = {
     TAGS.CLICK_TARGET,
     TAGS.ITEM,
 }
+-- Tags that active cursor should collide with
+local kActiveCollidesWithTags <const> = {
+    TAGS.SCREEN_BOUNDARY,
+}
+-- Tags that grabbing cursor should collide with
+local kGrabbingCollidesWithTags <const> = {
+    TAGS.SCREEN_BOUNDARY,
+    TAGS.GARDEN_BOUNDARY,
+    TAGS.POND,
+}
 
 -- ================================================================================
 -- Cursor States
@@ -73,10 +83,7 @@ class('CursorGrabbingState').extends('CursorState')
 function CursorGrabbingState:enter()
     self.cursor:setGrabImage()
     -- Cursor should collide with garden boundary when grabbing an item
-    self.cursor:setCollidesWithTags({
-        TAGS.SCREEN_BOUNDARY,
-        TAGS.GARDEN_BOUNDARY,
-    })
+    self.cursor:setCollidesWithTags(kGrabbingCollidesWithTags)
     -- Cursor may be colliding with rects with tags added above.
     -- Call this to line it up with the target item first.
     self.cursor:setInitialGrabPosition()
@@ -195,7 +202,7 @@ end
 
 -- Set self.collidesWithTags to the default value.
 function Cursor:setDefaultCollidesWithTags()
-    self.collidesWithTags = {TAGS.SCREEN_BOUNDARY}
+    self.collidesWithTags = kActiveCollidesWithTags
 end
 
 -- Allow collides with tags to be overridden by state.

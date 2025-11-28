@@ -43,8 +43,8 @@ function ItemManager:saveData()
     for i,item in ipairs(self.items) do
         data[i] = {
             className = item.className,
-            x = item.x,
-            y = item.y,
+            x = item.lastValidCoordinates.x,
+            y = item.lastValidCoordinates.y,
         }
     end
     pd.datastore.write(data, kDataFilename)

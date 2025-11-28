@@ -9,6 +9,11 @@ class('Item').extends(gfx.sprite)
 -- NOTE: Call <Class>.super.init(self, <args>) AT THE END of the subclass init()
 function Item:init(x, y, itemManager)
     self.itemManager = itemManager
+    -- Last valid position. Used to restore item position regardless of cursor shenanigans
+    self.lastValidCoordinates = {
+        x = x,
+        y = y,
+    }
 
     if self:getImage() ~= nil then
         self:setCollideRect(0, 0, self:getSize())
@@ -20,6 +25,17 @@ end
 
 function Item:setManagerIndex(index)
     self.index = index
+end
+
+function Item:updateLastValidCoordinates()
+    self.lastValidCoordinates = {
+        x = self.x,
+        y = self.y,
+    }
+end
+
+function Item:moveToLastValidCoordinates()
+    self:moveTo(self.lastValidCoordinates.x, self.lastValidCoordinates.y)
 end
 
 function Item:delete()
@@ -51,12 +67,7 @@ class('Fruit').extends('Item')
 function Fruit:init(x, y, itemManager)
     -- Set sprite. Subclass definition needs to specify the property spritesheetIndex
     if self.spritesheetIndex ~= nil then
-        -- TODO: DEBUG
-        DEBUG_MANAGER:vPrint('Fruit: image set')
         self:setImage(kFruitSpritesheet[self.spritesheetIndex])
-    else
-        -- TODO: DEBUG
-        DEBUG_MANAGER:vPrint('Fruit: image NOT set')
     end
 
     Fruit.super.init(self, x, y, itemManager)

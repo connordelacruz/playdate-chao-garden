@@ -85,7 +85,6 @@ function CursorGrabbingState:update()
     -- Handle D-pad input
     local isMoving = self.cursor:handleMovement()
     self.cursor:handleGrabbedItemMovement()
-    -- TODO: self.cursor:attemptToPlaceItem() or whatever:
     -- If stationary, handle A button input
     if not isMoving then
         self.cursor:handleGrabbedItemClick()
@@ -93,6 +92,8 @@ function CursorGrabbingState:update()
 end
 
 function CursorGrabbingState:exit()
+    -- Update last valid coordinates of item and set cursor.item to nil
+    self.cursor.item:updateLastValidCoordinates()
     self.cursor.item = nil
 end
 
@@ -240,6 +241,11 @@ end
 -- --------------------------------------------------------------------------------
 -- Grabbing Items
 -- --------------------------------------------------------------------------------
+
+-- TODO: DOC
+function Cursor:fixInitialGrabPosition()
+    -- TODO: implement!!!
+end
 
 -- Call after handleMovement() in grabbing state.
 -- We are assuming self.item was set to the grabbed item object by now.

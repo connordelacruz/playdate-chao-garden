@@ -25,12 +25,19 @@ class('ItemManager').extends()
 function ItemManager:init()
     -- Items currently in the garden
     self.items = {}
-    -- Attempt to load data
-    self:loadData()
-    -- Register save function
-    DATA_MANAGER:registerSaveFunction(kDataFilename, function ()
-        self:saveData()
-    end)
+
+    if DEBUG_MANAGER:isFlagSet(DEBUG_FLAGS.spawnAllFruits) then
+        -- DEBUG: Don't save or load items, instead spawn one of each fruit.
+        self:spawnAllFruits()
+    else
+        -- TODO: this is a weird way to structure this, add separate no save flag?
+        -- Attempt to load data
+        self:loadData()
+        -- Register save function
+        DATA_MANAGER:registerSaveFunction(kDataFilename, function()
+            self:saveData()
+        end)
+    end
 end
 
 -- --------------------------------------------------------------------------------
@@ -117,5 +124,31 @@ end
 function ItemManager:removeAll()
     for i,_ in ipairs(self.items) do
         self:removeItem(i)
+    end
+end
+
+-- --------------------------------------------------------------------------------
+-- Debugging
+-- --------------------------------------------------------------------------------
+
+-- DEBUG: Spawn one of each fruit
+function ItemManager:spawnAllFruits()
+    local startingX = 150
+    local startingY = 64
+    local spacing = 8
+
+    local i = 1
+    local x = startingX
+    local y = startingY
+    for itemClass,_ in pairs(FRUITS) do
+        local item = _G[itemClass](x, y, self)
+        self:addItem(item)
+        if i % 3 == 0 then
+            x = startingX
+            y = y + item.height + spacing
+        else
+            x = x + item.width + spacing
+        end
+        i = i + 1
     end
 end

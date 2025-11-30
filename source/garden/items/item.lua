@@ -57,6 +57,104 @@ end
 local kFruitSpritesheet <const> = gfx.imagetable.new('images/items/fruit')
 
 -- --------------------------------------------------------------------------------
+-- Global Constants
+-- --------------------------------------------------------------------------------
+-- Map classnames to fruit properties
+FRUITS = {
+    FruitA = {
+        spritesheetIndex = 1,
+        attributes = {
+            cost = 30,
+            mood = 1,
+            belly = 2,
+            swim = 3,
+            fly = -2,
+            run = -2,
+            power = 3,
+            stamina = 1,
+        },
+    },
+    FruitB = {
+        spritesheetIndex = 2,
+        attributes = {
+            cost = 60,
+            mood = 0,
+            belly = 1,
+            swim = 2,
+            fly = 5,
+            run = -1,
+            power = -1,
+            stamina = 3,
+        },
+    },
+    FruitC = {
+        spritesheetIndex = 3,
+        attributes = {
+            cost = 55,
+            mood = 2,
+            belly = 2,
+            swim = 4,
+            fly = -3,
+            run = 4,
+            power = -3,
+            stamina = 2,
+        },
+    },
+    FruitD = {
+        spritesheetIndex = 4,
+        attributes = {
+            cost = 50,
+            mood = -1,
+            belly = 1,
+            swim = 0,
+            fly = -1,
+            run = 3,
+            power = 4,
+            stamina = 2,
+        },
+    },
+    FruitE = {
+        spritesheetIndex = 5,
+        attributes = {
+            cost = 30,
+            mood = 1,
+            belly = 2,
+            swim = -2,
+            fly = 3,
+            run = 3,
+            power = -2,
+            stamina = 1,
+        },
+    },
+    FruitF = {
+        spritesheetIndex = 6,
+        attributes = {
+            cost = 55,
+            mood = 2,
+            belly = 2,
+            swim = -2,
+            fly = 4,
+            run = -2,
+            power = 4,
+            stamina = 2,
+        },
+    },
+    FruitG = {
+        spritesheetIndex = 7,
+        attributes = {
+            cost = 70,
+            mood = -3,
+            belly = 0,
+            swim = 3,
+            fly = 1,
+            run = 3,
+            power = 2,
+            stamina = -5,
+        },
+    },
+}
+
+-- --------------------------------------------------------------------------------
 -- Base Fruit Class
 -- --------------------------------------------------------------------------------
 class('Fruit').extends('Item')
@@ -76,18 +174,7 @@ end
 -- --------------------------------------------------------------------------------
 -- Fruit Classes
 -- --------------------------------------------------------------------------------
-class('FruitA', {
-    spritesheetIndex = 1,
-    attributes = {
-        cost = 30,
-        mood = 1,
-        belly = 2,
-        swim = 3,
-        fly = -2,
-        run = -2,
-        power = 3,
-        stamina = 1,
-    },
-}).extends('Fruit')
-
--- TODO: finish implementing
+-- See FRUITS declaration for details
+for className,props in pairs(FRUITS) do
+    class(className, props).extends('Fruit')
+end

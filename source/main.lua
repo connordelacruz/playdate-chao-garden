@@ -30,7 +30,7 @@ local gfx <const> = pd.graphics
 -- ===============================================================================
 DEBUG_MANAGER = DebugManager()
 -- --------------------------------------------------------------------------------
--- Debug Options:
+-- General Debug Options
 -- --------------------------------------------------------------------------------
 -- Verbose logging.
 DEBUG_MANAGER:setFlag(DEBUG_FLAGS.verbose)
@@ -39,19 +39,37 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.verbose)
 -- These must be registered via DEBUG_MANAGER:registerDebugUpdateFunction().
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.enableDebugUpdateFunctions)
 
+-- --------------------------------------------------------------------------------
+-- Scenes
+-- --------------------------------------------------------------------------------
 -- Skip title scene, go straight into garden.
 DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 
+-- --------------------------------------------------------------------------------
+-- Rings
+-- --------------------------------------------------------------------------------
 -- Use the crank to add/remove rings.
 -- NOTE: enableDebugUpdateFunctions must also be enabled!
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.crankToSetRings)
 
+-- --------------------------------------------------------------------------------
+-- Cursor
+-- --------------------------------------------------------------------------------
 -- When cursor moves, print coordinates to console.
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.printCursorCoordinates)
 
+-- --------------------------------------------------------------------------------
+-- Items
+-- --------------------------------------------------------------------------------
 -- If no items were loaded, add a fruit to the garden for testing.
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.addTestItemIfNoneLoaded)
 
+-- Skip saving and loading items entirely and spawn one of each fruit.
+-- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.spawnAllFruits)
+
+-- --------------------------------------------------------------------------------
+-- Chao
+-- --------------------------------------------------------------------------------
 -- Don't load Chao data on start. 
 -- NOTE: This gets silly with saving in the simulator,
 --       probably should also set skipSavingChaoData.

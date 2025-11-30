@@ -15,6 +15,7 @@ local kDebugOptions <const> = {
     'printCursorCoordinates',
     -- Items
     'addTestItemIfNoneLoaded',
+    'spawnAllFruits',
     -- Chao
     'skipLoadingChaoData',
     'skipSavingChaoData',

@@ -33,6 +33,7 @@ function GardenScene:init()
 end
 
 -- Create collision sprites for cursor and chao boundaries
+-- TODO: getGardenBoundaries() to return a rect with valid garden area, accounting for boundary thiccness?
 function GardenScene:createBoundaries()
     self.boundaries = {}
     local kWallThiccness <const> = 6

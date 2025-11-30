@@ -28,7 +28,10 @@ local kGrabbingCollidesWithTags <const> = {
 -- --------------------------------------------------------------------------------
 -- Generic cursor state with common constructor
 -- --------------------------------------------------------------------------------
-class('CursorState').extends('State')
+class('CursorState', {
+    -- Used to check if the cursor is free to do other things in its current state
+    handsFree = false,
+}).extends('State')
 
 function CursorState:init(cursor)
     self.cursor = cursor
@@ -40,7 +43,9 @@ end
 -- - When cursor is not moving, A clicks
 -- --------------------------------------------------------------------------------
 local kActiveState <const> = 'active'
-class('CursorActiveState').extends('CursorState')
+class('CursorActiveState', {
+    handsFree = true,
+}).extends('CursorState')
 
 function CursorActiveState:enter()
     self.cursor:setPointerImage()
@@ -246,6 +251,11 @@ end
 function Cursor:grabItem(item)
     self.item = item
     self:setState(kGrabbingState)
+end
+
+-- Check whether cursor is free to do other things in its current state
+function Cursor:handsFree()
+    return self.state.handsFree
 end
 
 -- --------------------------------------------------------------------------------

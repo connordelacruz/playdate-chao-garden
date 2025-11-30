@@ -1,8 +1,9 @@
 import 'garden/background'
 import 'garden/ui/cursor'
 import 'garden/ui/status-panel'
-import 'garden/items/item-manager'
 import 'garden/items/item'
+import 'garden/items/item-manager'
+import 'garden/items/shop'
 
 local pd <const> = playdate
 local gfx <const> = pd.graphics
@@ -25,6 +26,8 @@ function GardenScene:init()
     self.statusPanel:setChao(self.chao)
     -- Item Manager
     self.itemManager = ItemManager()
+    -- Shop Button
+    self.shopButton = ShopButton(self.cursor)
 
     -- Boundary collisions
     self:createBoundaries()

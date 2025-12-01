@@ -54,7 +54,7 @@ end
 -- --------------------------------------------------------------------------------
 -- Spritesheet
 -- --------------------------------------------------------------------------------
-local kFruitSpritesheet <const> = gfx.imagetable.new('images/items/fruit')
+FRUIT_SPRITESHEET = gfx.imagetable.new('images/items/fruit')
 
 -- --------------------------------------------------------------------------------
 -- Global Constants
@@ -165,7 +165,7 @@ class('Fruit').extends('Item')
 function Fruit:init(x, y, itemManager)
     -- Set sprite. Subclass definition needs to specify the property spritesheetIndex
     if self.spritesheetIndex ~= nil then
-        self:setImage(kFruitSpritesheet[self.spritesheetIndex])
+        self:setImage(FRUIT_SPRITESHEET[self.spritesheetIndex])
     end
 
     Fruit.super.init(self, x, y, itemManager)

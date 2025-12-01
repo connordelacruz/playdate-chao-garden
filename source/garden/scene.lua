@@ -27,8 +27,8 @@ function GardenScene:init()
     self.statusPanel:setChao(self.chao)
     -- Item Manager
     self.itemManager = ItemManager()
-    -- Shop Button
-    self.shopButton = ShopButton(self.cursor)
+    -- Shop Button + shop panel
+    self.shopButton = ShopButton(self.cursor, self.itemManager)
     -- Minigame Gameboys
     -- TODO: prob just 1, scale it up, transition to scene with list of games
     local gb1 = Gameboy(SCREEN_WIDTH - 32, 16)

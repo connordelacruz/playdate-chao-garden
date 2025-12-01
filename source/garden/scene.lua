@@ -4,6 +4,7 @@ import 'garden/ui/status-panel'
 import 'garden/items/item'
 import 'garden/items/item-manager'
 import 'garden/items/shop'
+import 'garden/minigames/gameboy'
 
 local pd <const> = playdate
 local gfx <const> = pd.graphics
@@ -28,6 +29,13 @@ function GardenScene:init()
     self.itemManager = ItemManager()
     -- Shop Button
     self.shopButton = ShopButton(self.cursor)
+    -- Minigame Gameboys
+    local gb1 = Gameboy(SCREEN_WIDTH - 32, 16)
+    local gb2 = Gameboy(gb1.x - gb1.width, 16)
+    self.gameboys = {
+        gb1,
+        gb2,
+    }
 
     -- Boundary collisions
     self:createBoundaries()

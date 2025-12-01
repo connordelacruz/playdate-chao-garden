@@ -16,29 +16,15 @@ local text <const> = playout.text.new
 -- --------------------------------------------------------------------------------
 local kFonts <const> = {
     -- Chao name
-    name = gfx.getSystemFont(gfx.font.kVariantBold),
+    name = FONTS.heading,
     -- Bar UI title
-    title = gfx.font.new('fonts/diamond_12'),
+    title = FONTS.normal,
     -- Stat UI level
-    level = gfx.font.new('fonts/dpaint_8'),
+    level = FONTS.small,
 }
 -- --------------------------------------------------------------------------------
 -- Styles
 -- --------------------------------------------------------------------------------
--- Root panel UI
-local kRootPanelStyle <const> = {
-    -- Note: Width to be set based on self.panelWidth when UI is created
-    height = SCREEN_HEIGHT,
-    vAlign = playout.kAlignStart,
-    hAlign = playout.kAlignCenter,
-    paddingTop = 12,
-    -- paddingBottom = 12,
-    paddingLeft = 6,
-    paddingRight = 6,
-    backgroundColor = gfx.kColorWhite,
-    borderRadius = 9,
-    border = 2,
-}
 -- Chao name text
 local kNameTextStyle <const> = {
     fontFamily = kFonts.name,
@@ -160,7 +146,7 @@ end
 function StatusPanel:createPanelUI()
     local outerPanelBoxProps = {
         id = 'status-panel-root',
-        style = kRootPanelStyle,
+        style = STYLE_ROOT_PANEL,
         width = self.panelWidth,
     }
 

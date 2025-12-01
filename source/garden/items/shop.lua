@@ -19,7 +19,7 @@ end
 
 function ShopButton:handlePress()
     if pd.buttonJustPressed(pd.kButtonB) and self.cursor:handsFree() then
-        -- TODO: Open ShopPanel
+        -- TODO: Open ShopPanel, disable cursor ?
         DEBUG_MANAGER:vPrint('ShopButton: B pressed + hands free.')
     end
 end
@@ -35,6 +35,17 @@ end
 -- ===============================================================================
 -- Shop UI
 -- ===============================================================================
+
+-- --------------------------------------------------------------------------------
+-- Style Constants
+-- --------------------------------------------------------------------------------
+-- TODO: make global with common stuff between this and status panel
+-- Root panel UI
+
+
+-- --------------------------------------------------------------------------------
+-- Class
+-- --------------------------------------------------------------------------------
 class('ShopPanel').extends(gfx.sprite)
 
 function ShopPanel:init(itemManager)

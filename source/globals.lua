@@ -49,3 +49,33 @@ Z_INDEX = {
     UI_LAYER_2 = 200,
     UI_LAYER_3 = 300,
 }
+
+-- --------------------------------------------------------------------------------
+-- Fonts
+-- --------------------------------------------------------------------------------
+FONTS = {
+    -- Headings, e.g. Chao name
+    heading = gfx.getSystemFont(gfx.font.kVariantBold),
+    -- Normal text, e.g. status panel stat names
+    normal = gfx.font.new('fonts/diamond_12'),
+    -- Small text, e.g. stat levels
+    small = gfx.font.new('fonts/dpaint_8'),
+}
+
+-- --------------------------------------------------------------------------------
+-- Playout Styles
+-- --------------------------------------------------------------------------------
+-- Root panel styles (status, shop)
+STYLE_ROOT_PANEL = {
+    -- Note: Width must be set by the implementing class
+    height = SCREEN_HEIGHT,
+    vAlign = playout.kAlignStart,
+    hAlign = playout.kAlignCenter,
+    paddingTop = 12,
+    -- paddingBottom = 12,
+    paddingLeft = 6,
+    paddingRight = 6,
+    backgroundColor = gfx.kColorWhite,
+    borderRadius = 9,
+    border = 2,
+}

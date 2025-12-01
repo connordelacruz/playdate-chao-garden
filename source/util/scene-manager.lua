@@ -104,6 +104,7 @@ function SceneManager:loadNewScene()
 end
 
 function SceneManager:cleanupScene()
+    -- TODO: Save scene data! Then remove save handlers
     -- Remove all sprites
     gfx.sprite.removeAll()
     -- Remove timers

@@ -30,6 +30,7 @@ function GardenScene:init()
     -- Shop Button
     self.shopButton = ShopButton(self.cursor)
     -- Minigame Gameboys
+    -- TODO: prob just 1, scale it up, transition to scene with list of games
     local gb1 = Gameboy(SCREEN_WIDTH - 32, 16)
     local gb2 = Gameboy(gb1.x - gb1.width, 16)
     self.gameboys = {

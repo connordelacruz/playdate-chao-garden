@@ -56,7 +56,7 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 -- Cursor
 -- --------------------------------------------------------------------------------
 -- When cursor moves, print coordinates to console.
-DEBUG_MANAGER:setFlag(DEBUG_FLAGS.printCursorCoordinates)
+-- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.printCursorCoordinates)
 
 -- --------------------------------------------------------------------------------
 -- Items

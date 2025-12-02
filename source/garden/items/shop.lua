@@ -113,15 +113,76 @@ class('ShopPanel').extends(gfx.sprite)
 
 function ShopPanel:init(itemManager)
     self.itemManager = itemManager
+    -- Index of selected menu item
+    self.selectedIndex = 1
     
     -- Setup Playout elements for UI
     self:renderUI()
+    -- Create shop cursor sprite
+    self:createCursor()
+
     -- Draw from top right corner
     self:setCenter(1, 0)
     -- Move to right side of the screen
     self:moveTo(SCREEN_WIDTH, 0)
     -- Display over other elements
-    self:setZIndex(Z_INDEX.TOP)
+    self:setZIndex(Z_INDEX.UI_LAYER_3)
+end
+
+-- --------------------------------------------------------------------------------
+-- Shop Cursor
+-- --------------------------------------------------------------------------------
+
+function ShopPanel:createCursor()
+    -- TODO: sprite w/ triangle for now
+    local nodeHeight = 20
+    -- Draw triangle
+    local cursorImage = gfx.image.new(nodeHeight, nodeHeight)
+    gfx.pushContext(cursorImage)
+        gfx.setColor(gfx.kColorWhite)
+        gfx.fillTriangle(
+            0, 0,
+            nodeHeight, nodeHeight / 2,
+            0, nodeHeight
+        )
+        gfx.setColor(gfx.kColorBlack)
+        gfx.setLineWidth(2)
+        gfx.setStrokeLocation(gfx.kStrokeInside)
+        gfx.drawTriangle(
+            0, 0,
+            nodeHeight, nodeHeight / 2,
+            0, nodeHeight
+        )
+    gfx.popContext()
+
+    -- Create sprite object
+    self.cursorSprite = gfx.sprite.new(cursorImage)
+    -- Center on right side, middle point
+    self.cursorSprite:setCenter(1, 0.5)
+    -- Display on top
+    self.cursorSprite:setZIndex(Z_INDEX.TOP)
+end
+
+function ShopPanel:moveCursorToSelectedIndex()
+    local selected = self.panelUI.tabIndex[self.selectedIndex]
+    -- Point anchored center left of the selected node
+    local pointerPos = getRectAnchor(selected.rect, playout.kAnchorCenterLeft):offsetBy(self.x - self.width, self.y)
+    self.cursorSprite:moveTo(pointerPos:unpack())
+end
+
+-- --------------------------------------------------------------------------------
+-- add()/remove() Overrides
+-- --------------------------------------------------------------------------------
+
+function ShopPanel:add()
+    ShopPanel.super.add(self)
+    self:moveCursorToSelectedIndex()
+    self.cursorSprite:add()
+end
+
+function ShopPanel:remove()
+    self.cursorSprite:remove()
+    ShopPanel.super.remove(self)
 end
 
 -- --------------------------------------------------------------------------------
@@ -130,6 +191,7 @@ end
 
 function ShopPanel:renderUI()
     self.panelUI = playout.tree.new(self:createPanelUI())
+    self.panelUI:computeTabIndex()
     local panelImage = self.panelUI:draw()
     self:setImage(panelImage)
 end
@@ -150,19 +212,21 @@ function ShopPanel:createItemsListUI()
     -- Fruits
     for className,props in pairs(FRUITS) do
         local fruitImage = FRUIT_SPRITESHEET[props.spritesheetIndex]
-        itemElements[#itemElements+1] = self:createItemUI(className, fruitImage, props.attributes.cost)
+        local tabIndex = #itemElements+1
+        itemElements[tabIndex] = self:createItemUI(tabIndex, className, fruitImage, props.attributes.cost)
     end
     return itemElements
 end
 
 -- Creates an item UI to add to the shop list
-function ShopPanel:createItemUI(className, itemImage, cost)
+function ShopPanel:createItemUI(tabIndex, className, itemImage, cost)
     local imageUI = image(itemImage)
     local costText = text(tostring(cost), {
         fontFamily = FONTS.normal,
     })
     -- TODO: figure out logic for clicking on list item
     return box({
+        tabIndex = tabIndex,
         direction = playout.kDirectionHorizontal,
         vAlign = playout.kAlignCenter,
         hAlign = playout.kAlignStart,

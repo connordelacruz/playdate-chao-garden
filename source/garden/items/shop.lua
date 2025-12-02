@@ -239,3 +239,25 @@ function ShopPanel:createItemUI(tabIndex, className, itemImage, cost)
         costText,
     })
 end
+
+-- --------------------------------------------------------------------------------
+-- Update
+-- --------------------------------------------------------------------------------
+
+function ShopPanel:update()
+    -- TODO: hella code cleanup / extracting to methods
+
+    -- D-Pad
+    if pd.buttonJustPressed(pd.kButtonUp) then
+        local i = self.selectedIndex - 1
+        self.selectedIndex = i > 0 and i or #self.panelUI.tabIndex
+        self:moveCursorToSelectedIndex()
+    elseif pd.buttonJustPressed(pd.kButtonDown) then
+        -- Gotta do modulo before incrementing cuz lua indexes by 1
+        local i = self.selectedIndex % #self.panelUI.tabIndex
+        self.selectedIndex = i + 1
+        self:moveCursorToSelectedIndex()
+    end
+
+    -- TODO: attempt to buy and close menu if A is pressed
+end

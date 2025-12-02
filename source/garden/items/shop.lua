@@ -8,16 +8,58 @@ local image <const> = playout.image.new
 local text <const> = playout.text.new
 
 -- ===============================================================================
+-- Shop States
+-- ===============================================================================
+
+-- --------------------------------------------------------------------------------
+-- Superclass
+-- --------------------------------------------------------------------------------
+class('ShopState').extends('State')
+
+function ShopState:init(shopButton)
+    self.shopButton = shopButton
+end
+
+-- --------------------------------------------------------------------------------
+-- Closed:
+-- - Listen for B press to open panel (if cursor has a free hand)
+-- --------------------------------------------------------------------------------
+local kClosedState <const> = 'closed'
+class('ShopClosedState').extends('ShopState')
+
+function ShopClosedState:update()
+    self.shopButton:handleOpenPress()
+end
+
+-- --------------------------------------------------------------------------------
+-- Open:
+-- - Listen for B press to close panel
+-- --------------------------------------------------------------------------------
+local kOpenState <const> = 'open'
+class('ShopOpenState').extends('ShopState')
+
+function ShopOpenState:update()
+    self.shopButton:handleClosePress()
+end
+
+-- ===============================================================================
 -- Shop Menu Button Indicator/Input Listener
 -- ===============================================================================
-class('ShopButton').extends(gfx.sprite)
--- TODO: implement open/closed state
+class('ShopButton').extends('FSMSprite')
 
 function ShopButton:init(cursor, itemManager)
     self.cursor = cursor
     self.itemManager = itemManager
     -- Shop UI sprite
     self.shopPanel = ShopPanel(self.itemManager)
+
+    -- States
+    self.states = {
+        [kClosedState] = ShopClosedState(self),
+        [kOpenState] = ShopOpenState(self),
+    }
+    self:setInitialState(kClosedState)
+
     -- TODO: add a simple image for this
     self:add()
 end
@@ -26,10 +68,15 @@ end
 -- Input Handling
 -- --------------------------------------------------------------------------------
 
--- TODO: implement open/close states, handle B button accordingly
-function ShopButton:handlePress()
+function ShopButton:handleOpenPress()
     if pd.buttonJustPressed(pd.kButtonB) and self.cursor:handsFree() then
         self:showShopPanel()
+    end
+end
+
+function ShopButton:handleClosePress()
+    if pd.buttonJustPressed(pd.kButtonB) then
+        self:hideShopPanel()
     end
 end
 
@@ -40,20 +87,13 @@ end
 function ShopButton:showShopPanel()
     self.cursor:disable()
     self.shopPanel:add()
+    self:setState(kOpenState)
 end
 
--- TODO: implement
 function ShopButton:hideShopPanel()
     self.shopPanel:remove()
     self.cursor:enable()
-end
-
--- --------------------------------------------------------------------------------
--- Update
--- --------------------------------------------------------------------------------
-
-function ShopButton:update()
-    self:handlePress()
+    self:setState(kClosedState)
 end
 
 -- ===============================================================================

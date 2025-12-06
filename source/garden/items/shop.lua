@@ -8,6 +8,33 @@ local image <const> = playout.image.new
 local text <const> = playout.text.new
 
 -- ===============================================================================
+-- Constants
+-- ===============================================================================
+
+-- --------------------------------------------------------------------------------
+-- Fonts
+-- --------------------------------------------------------------------------------
+local kFonts <const> = {
+    -- Price of an item TODO: better font
+    itemCost = FONTS.normal,
+}
+
+-- --------------------------------------------------------------------------------
+-- Styles
+-- --------------------------------------------------------------------------------
+-- Shop list item container
+local kItemListNodeStyle <const> = {
+    font = kFonts.itemCost,
+    direction = playout.kDirectionHorizontal,
+    vAlign = playout.kAlignCenter,
+    hAlign = playout.kAlignStart,
+    spacing = 12,
+    paddingBottom = 5,
+    paddingLeft = 5,
+    paddingRight = 5,
+}
+
+-- ===============================================================================
 -- Shop States
 -- ===============================================================================
 
@@ -163,11 +190,43 @@ function ShopPanel:createCursor()
     self.cursorSprite:setZIndex(Z_INDEX.TOP)
 end
 
+-- Shorthand to get the playout node for the selected item in the list
+function ShopPanel:getSelectedNode()
+    return self.panelUI.tabIndex[self.selectedIndex]
+end
+
+-- Check for D-pad input, update self.selectedIndex, and update shop cursor
+function ShopPanel:handleMove()
+    if pd.buttonJustPressed(pd.kButtonUp) then
+        local i = self.selectedIndex - 1
+        self.selectedIndex = i > 0 and i or #self.panelUI.tabIndex
+        self:moveCursorToSelectedIndex()
+    elseif pd.buttonJustPressed(pd.kButtonDown) then
+        -- Gotta do modulo before incrementing cuz lua indexes by 1
+        local i = self.selectedIndex % #self.panelUI.tabIndex
+        self.selectedIndex = i + 1
+        self:moveCursorToSelectedIndex()
+    end
+end
+
+-- Move shop cursor to item node for self.selectedIndex
 function ShopPanel:moveCursorToSelectedIndex()
-    local selected = self.panelUI.tabIndex[self.selectedIndex]
+    local selected = self:getSelectedNode()
     -- Point anchored center left of the selected node
     local pointerPos = getRectAnchor(selected.rect, playout.kAnchorCenterLeft):offsetBy(self.x - self.width, self.y)
     self.cursorSprite:moveTo(pointerPos:unpack())
+end
+
+-- Check for A press, attempt to purchase selected item
+function ShopPanel:handleClick()
+    if pd.buttonJustPressed(pd.kButtonA) then
+        local selected = self:getSelectedNode()
+        -- Note: this custom prop is defined in createItemUI()
+        local itemProps = selected.properties.item
+        -- TODO: FINISH
+        DEBUG_MANAGER:vPrint('A clicked on shop list')
+        DEBUG_MANAGER:vPrintTable(itemProps)
+    end
 end
 
 -- --------------------------------------------------------------------------------
@@ -200,7 +259,6 @@ function ShopPanel:createPanelUI()
     local outerPanelBoxProps = {
         id = 'shop-panel-root',
         style = STYLE_ROOT_PANEL,
-        -- TODO: width?
     }
 
     return box(outerPanelBoxProps, self:createItemsListUI())
@@ -221,19 +279,16 @@ end
 -- Creates an item UI to add to the shop list
 function ShopPanel:createItemUI(tabIndex, className, itemImage, cost)
     local imageUI = image(itemImage)
-    local costText = text(tostring(cost), {
-        fontFamily = FONTS.normal,
-    })
-    -- TODO: figure out logic for clicking on list item
+    local costText = text(tostring(cost))
+
     return box({
         tabIndex = tabIndex,
-        direction = playout.kDirectionHorizontal,
-        vAlign = playout.kAlignCenter,
-        hAlign = playout.kAlignStart,
-        spacing = 12,
-        paddingBottom = 5,
-        paddingLeft = 5,
-        paddingRight = 5,
+        style = kItemListNodeStyle,
+        -- Custom properties for item logic
+        item = {
+            className = className,
+            cost = cost,
+        },
     }, {
         imageUI,
         costText,
@@ -245,19 +300,7 @@ end
 -- --------------------------------------------------------------------------------
 
 function ShopPanel:update()
-    -- TODO: hella code cleanup / extracting to methods
-
-    -- D-Pad
-    if pd.buttonJustPressed(pd.kButtonUp) then
-        local i = self.selectedIndex - 1
-        self.selectedIndex = i > 0 and i or #self.panelUI.tabIndex
-        self:moveCursorToSelectedIndex()
-    elseif pd.buttonJustPressed(pd.kButtonDown) then
-        -- Gotta do modulo before incrementing cuz lua indexes by 1
-        local i = self.selectedIndex % #self.panelUI.tabIndex
-        self.selectedIndex = i + 1
-        self:moveCursorToSelectedIndex()
-    end
-
-    -- TODO: attempt to buy and close menu if A is pressed
+    -- TODO: RENAME to checkFor.*
+    self:handleMove()
+    self:handleClick()
 end

@@ -190,6 +190,10 @@ function ShopPanel:createCursor()
     self.cursorSprite:setZIndex(Z_INDEX.TOP)
 end
 
+-- --------------------------------------------------------------------------------
+-- D-Pad Input Handling
+-- --------------------------------------------------------------------------------
+
 -- Shorthand to get the playout node for the selected item in the list
 function ShopPanel:getSelectedNode()
     return self.panelUI.tabIndex[self.selectedIndex]
@@ -217,20 +221,31 @@ function ShopPanel:moveCursorToSelectedIndex()
     self.cursorSprite:moveTo(pointerPos:unpack())
 end
 
+-- --------------------------------------------------------------------------------
+-- Click Input Handling
+-- --------------------------------------------------------------------------------
+
+-- Check if we can afford a selected item and if there's space in the garden for it
+function ShopPanel:canPurchaseItem(itemProps)
+    return RING_MASTER:canAfford(itemProps.cost) and self.itemManager:canAddItem()
+end
+
 -- Check for A press, attempt to purchase selected item
 function ShopPanel:handleClick()
     if pd.buttonJustPressed(pd.kButtonA) then
         local selected = self:getSelectedNode()
         -- Note: this custom prop is defined in createItemUI()
         local itemProps = selected.properties.item
-        -- TODO: FINISH
-        DEBUG_MANAGER:vPrint('A clicked on shop list')
-        DEBUG_MANAGER:vPrintTable(itemProps)
+
+        DEBUG_MANAGER:vPrint('ShopPanel: A press on shop list, seeing if we can buy it...')
+        local canPurchase = self:canPurchaseItem(itemProps)
+        DEBUG_MANAGER:vPrint('canPurchase = ' .. tostring(canPurchase), 1)
     end
 end
 
 -- --------------------------------------------------------------------------------
 -- add()/remove() Overrides
+-- (adds logic to deal with internal cursor sprite)
 -- --------------------------------------------------------------------------------
 
 function ShopPanel:add()

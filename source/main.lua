@@ -37,7 +37,7 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.verbose)
 
 -- Enable debug update functions that will be called in the main update() loop.
 -- These must be registered via DEBUG_MANAGER:registerDebugUpdateFunction().
--- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.enableDebugUpdateFunctions)
+DEBUG_MANAGER:setFlag(DEBUG_FLAGS.enableDebugUpdateFunctions)
 
 -- --------------------------------------------------------------------------------
 -- Scenes
@@ -49,8 +49,9 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 -- Rings
 -- --------------------------------------------------------------------------------
 -- Use the crank to add/remove rings.
--- NOTE: enableDebugUpdateFunctions must also be enabled!
--- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.crankToSetRings)
+--
+-- !!!! NOTE !!!!: enableDebugUpdateFunctions must also be enabled!
+DEBUG_MANAGER:setFlag(DEBUG_FLAGS.crankToSetRings)
 
 -- --------------------------------------------------------------------------------
 -- Cursor
@@ -65,7 +66,7 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.addTestItemIfNoneLoaded)
 
 -- Skip saving and loading items entirely and spawn one of each fruit.
--- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.spawnAllFruits)
+DEBUG_MANAGER:setFlag(DEBUG_FLAGS.spawnAllFruits)
 
 -- --------------------------------------------------------------------------------
 -- Chao

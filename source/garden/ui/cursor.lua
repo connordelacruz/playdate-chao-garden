@@ -75,6 +75,11 @@ function CursorDisabledState:enter()
     self.cursor:setVisible(false)
 end
 
+function CursorDisabledState:exit()
+    -- Show cursor
+    self.cursor:setVisible(true)
+end
+
 -- --------------------------------------------------------------------------------
 -- Grabbing:
 -- - Sprite changes to grab w/ item sprite
@@ -180,8 +185,6 @@ end
 -- --------------------------------------------------------------------------------
 
 function Cursor:setImageFromSpritesheet(spriteIndex)
-    -- If this method is called, we're assuming the sprite should be visible
-    self:setVisible(true)
     self:setImage(self.spritesheet[spriteIndex])
 end
 

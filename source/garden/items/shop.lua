@@ -12,26 +12,22 @@ local text <const> = playout.text.new
 -- ===============================================================================
 
 -- --------------------------------------------------------------------------------
+-- Sounds
+-- --------------------------------------------------------------------------------
+-- TODO: may want to make this global since we'll prob reuse these sounds
+local kSounds <const> = {
+    move = pd.sound.sampleplayer.new('sounds/ui/move.wav'),
+    click = pd.sound.sampleplayer.new('sounds/ui/select.wav'),
+    cancel = pd.sound.sampleplayer.new('sounds/ui/cancel.wav'),
+    nope = pd.sound.sampleplayer.new('sounds/ui/nope.wav'),
+}
+
+-- --------------------------------------------------------------------------------
 -- Fonts
 -- --------------------------------------------------------------------------------
 local kFonts <const> = {
     -- Price of an item TODO: better font
     itemCost = FONTS.normal,
-}
-
--- --------------------------------------------------------------------------------
--- Styles
--- --------------------------------------------------------------------------------
--- Shop list item container
-local kItemListNodeStyle <const> = {
-    font = kFonts.itemCost,
-    direction = playout.kDirectionHorizontal,
-    vAlign = playout.kAlignCenter,
-    hAlign = playout.kAlignStart,
-    spacing = 12,
-    paddingBottom = 5,
-    paddingLeft = 5,
-    paddingRight = 5,
 }
 
 -- ===============================================================================
@@ -78,7 +74,6 @@ function ShopButton:init(cursor, itemManager)
     self.cursor = cursor
     self.itemManager = itemManager
     -- Shop UI sprite
-    -- TODO: pass self
     self.shopPanel = ShopPanel(self.itemManager, self)
 
     -- States
@@ -98,12 +93,14 @@ end
 
 function ShopButton:handleOpenPress()
     if pd.buttonJustPressed(pd.kButtonB) and self.cursor:handsFree() then
+        kSounds.click:play()
         self:showShopPanel()
     end
 end
 
 function ShopButton:handleClosePress()
     if pd.buttonJustPressed(pd.kButtonB) then
+        kSounds.cancel:play()
         self:hideShopPanel()
     end
 end
@@ -145,7 +142,17 @@ end
 -- Style Constants
 -- --------------------------------------------------------------------------------
 
--- TODO: extract styles
+-- Shop list item container
+local kItemListNodeStyle <const> = {
+    font = kFonts.itemCost,
+    direction = playout.kDirectionHorizontal,
+    vAlign = playout.kAlignCenter,
+    hAlign = playout.kAlignStart,
+    spacing = 12,
+    paddingBottom = 5,
+    paddingLeft = 5,
+    paddingRight = 5,
+}
 
 -- --------------------------------------------------------------------------------
 -- Class
@@ -227,12 +234,16 @@ function ShopPanel:handleMove()
     end
 end
 
--- Move shop cursor to item node for self.selectedIndex
-function ShopPanel:moveCursorToSelectedIndex()
+-- Move shop cursor to item node for self.selectedIndex.
+-- If noSound is truthy, do not play cursor move sound.
+function ShopPanel:moveCursorToSelectedIndex(noSound)
     local selected = self:getSelectedNode()
     -- Point anchored center left of the selected node
     local pointerPos = getRectAnchor(selected.rect, playout.kAnchorCenterLeft):offsetBy(self.x - self.width, self.y)
     self.cursorSprite:moveTo(pointerPos:unpack())
+    if not noSound then
+        kSounds.move:play()
+    end
 end
 
 -- --------------------------------------------------------------------------------
@@ -273,14 +284,17 @@ function ShopPanel:handleClick()
         local itemProps = selected.properties.item
 
         DEBUG_MANAGER:vPrint('ShopPanel: A press on shop list, seeing if we can buy it...')
-        -- TODO: visual indication if we cannot purchase
         local canPurchase = self:canPurchaseItem(itemProps)
 
         if canPurchase then
-            local item = self:purchaseItem(itemProps)
             DEBUG_MANAGER:vPrint(itemProps.className .. ' purchased, closing shop panel', 1)
+            local item = self:purchaseItem(itemProps)
+            kSounds.click:play()
             -- Pass new item to shop button and let it handle giving it to cursor
             self.shopButton:closeShopPanelAfterPurchase(item)
+        else
+            -- TODO: visual indication that hints at why we can't purchase
+            kSounds.nope:play()
         end
     end
 end
@@ -292,7 +306,7 @@ end
 
 function ShopPanel:add()
     ShopPanel.super.add(self)
-    self:moveCursorToSelectedIndex()
+    self:moveCursorToSelectedIndex(true)
     self.cursorSprite:add()
 end
 

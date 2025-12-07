@@ -66,7 +66,7 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.crankToSetRings)
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.addTestItemIfNoneLoaded)
 
 -- Skip saving and loading items entirely and spawn one of each fruit.
-DEBUG_MANAGER:setFlag(DEBUG_FLAGS.spawnAllFruits)
+-- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.spawnAllFruits)
 
 -- --------------------------------------------------------------------------------
 -- Chao

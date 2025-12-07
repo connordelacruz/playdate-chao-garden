@@ -17,6 +17,11 @@ local kDataFilename <const> = 'item-data'
 -- Max number of items allowed in the garden
 local kMaxItems <const> = 8
 
+-- Default coordinates for newly spawned items
+-- TODO: handle this more dynamically based on valid garden bounds
+local kItemDefaultX <const> = 150
+local kItemDefaultY <const> = 64
+
 -- ===============================================================================
 -- Item Manager Class
 -- ===============================================================================
@@ -65,15 +70,13 @@ function ItemManager:loadData()
     end
     DEBUG_MANAGER:vPrint('ItemManager: loading item data...')
     for _,itemData in ipairs(data) do
-        local item = _G[itemData.className](itemData.x, itemData.y, self)
-        self:addItem(item)
+        self:addNewItem(itemData.className, itemData.x, itemData.y)
         DEBUG_MANAGER:vPrint('- '..itemData.className..'('..itemData.x..','..itemData.y..')', 1)
     end
     -- DEBUG: Create a fruit if nothing else was loaded
     if DEBUG_MANAGER:isFlagSet(DEBUG_FLAGS.addTestItemIfNoneLoaded) and #self.items == 0 then
         DEBUG_MANAGER:vPrint('ItemManager: Adding free fruit for testing.')
-        local item = FruitA(300, 64, self)
-        self:addItem(item)
+        self:addNewItem('FruitA')
     end
 end
 
@@ -100,6 +103,21 @@ function ItemManager:addItem(item)
     end
 
     return success
+end
+
+-- Instantiate item with class className, add item to garden, and return item instance.
+-- If coordinates aren't specified, use default values.
+--
+-- Note: className is not validated
+-- TODO: optional x,y params, set to default values if not specified. Implement in loadData()
+function ItemManager:addNewItem(className, x, y)
+    x = x ~= nil and x or kItemDefaultX
+    y = y ~= nil and y or kItemDefaultY
+
+    local item = _G[className](x, y, self)
+    self:addItem(item)
+
+    return item
 end
 
 function ItemManager:removeItem(index)
@@ -133,16 +151,15 @@ end
 
 -- DEBUG: Spawn one of each fruit
 function ItemManager:spawnAllFruits()
-    local startingX = 150
-    local startingY = 64
+    local startingX = kItemDefaultX
+    local startingY = kItemDefaultY
     local spacing = 8
 
     local i = 1
     local x = startingX
     local y = startingY
     for itemClass,_ in pairs(FRUITS) do
-        local item = _G[itemClass](x, y, self)
-        self:addItem(item)
+        local item = self:addNewItem(itemClass, x, y)
         if i % 3 == 0 then
             x = startingX
             y = y + item.height + spacing

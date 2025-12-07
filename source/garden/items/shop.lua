@@ -78,7 +78,8 @@ function ShopButton:init(cursor, itemManager)
     self.cursor = cursor
     self.itemManager = itemManager
     -- Shop UI sprite
-    self.shopPanel = ShopPanel(self.itemManager)
+    -- TODO: pass self
+    self.shopPanel = ShopPanel(self.itemManager, self)
 
     -- States
     self.states = {
@@ -111,15 +112,25 @@ end
 -- Hide/Show Shop Panel
 -- --------------------------------------------------------------------------------
 
+-- Disable cursor, add shop panel sprite
 function ShopButton:showShopPanel()
     self.cursor:disable()
     self.shopPanel:add()
     self:setState(kOpenState)
 end
 
+-- Remove shop panel sprite, set cursor to active
 function ShopButton:hideShopPanel()
     self.shopPanel:remove()
     self.cursor:enable()
+    self:setState(kClosedState)
+end
+
+-- Remove shop panel sprite, grab passed in item with cursor
+function ShopButton:closeShopPanelAfterPurchase(item)
+    self.shopPanel:remove()
+    -- TODO: move cursor?
+    self.cursor:grabItem(item)
     self:setState(kClosedState)
 end
 
@@ -138,8 +149,9 @@ end
 -- --------------------------------------------------------------------------------
 class('ShopPanel').extends(gfx.sprite)
 
-function ShopPanel:init(itemManager)
+function ShopPanel:init(itemManager, shopButton)
     self.itemManager = itemManager
+    self.shopButton = shopButton
     -- Index of selected menu item
     self.selectedIndex = 1
     
@@ -161,7 +173,6 @@ end
 -- --------------------------------------------------------------------------------
 
 function ShopPanel:createCursor()
-    -- TODO: sprite w/ triangle for now
     local nodeHeight = 20
     -- Draw triangle
     local cursorImage = gfx.image.new(nodeHeight, nodeHeight)
@@ -230,6 +241,12 @@ function ShopPanel:canPurchaseItem(itemProps)
     return RING_MASTER:canAfford(itemProps.cost) and self.itemManager:canAddItem()
 end
 
+-- Update ring master and item manger and return instance of newly purchased item
+function ShopPanel:purchaseItem(itemProps)
+    RING_MASTER:subtractRings(itemProps.cost)
+    return self.itemManager:addNewItem(itemProps.className)
+end
+
 -- Check for A press, attempt to purchase selected item
 function ShopPanel:handleClick()
     if pd.buttonJustPressed(pd.kButtonA) then
@@ -238,8 +255,18 @@ function ShopPanel:handleClick()
         local itemProps = selected.properties.item
 
         DEBUG_MANAGER:vPrint('ShopPanel: A press on shop list, seeing if we can buy it...')
+        -- TODO: visual indication if we cannot purchase
         local canPurchase = self:canPurchaseItem(itemProps)
-        DEBUG_MANAGER:vPrint('canPurchase = ' .. tostring(canPurchase), 1)
+
+        if canPurchase then
+            local item = self:purchaseItem(itemProps)
+            DEBUG_MANAGER:vPrint(itemProps.className .. ' purchased, closing shop panel', 1)
+            -- Pass new item to shop button and let it handle giving it to cursor
+            self.shopButton:closeShopPanelAfterPurchase(item)
+        else
+            -- TODO: explain why?
+            DEBUG_MANAGER:vPrint('Unable to purchase ' .. itemProps.className, 1)
+        end
     end
 end
 

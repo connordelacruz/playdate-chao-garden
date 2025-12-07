@@ -3,6 +3,7 @@ import 'CoreLibs/object'
 import 'CoreLibs/graphics'
 import 'CoreLibs/sprites'
 import 'CoreLibs/timer'
+import 'CoreLibs/frameTimer'
 import 'CoreLibs/crank'
 import 'CoreLibs/ui'
 import 'CoreLibs/keyboard'
@@ -129,4 +130,5 @@ function pd.update()
     -- Update sprites and timers
     gfx.sprite.update()
     pd.timer.updateTimers()
+    pd.frameTimer.updateTimers()
 end

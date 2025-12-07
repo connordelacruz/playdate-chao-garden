@@ -129,9 +129,12 @@ end
 -- Remove shop panel sprite, grab passed in item with cursor
 function ShopButton:closeShopPanelAfterPurchase(item)
     self.shopPanel:remove()
-    -- TODO: move cursor?
-    self.cursor:grabItem(item)
-    self:setState(kClosedState)
+    -- Cursor should ignore A press from purchase, otherwise it drops the item right away.
+    -- Wait 1 frame before updating cursor state
+    pd.frameTimer.performAfterDelay(1, function ()
+        self.cursor:grabItem(item)
+        self:setState(kClosedState)
+    end)
 end
 
 -- ===============================================================================
@@ -238,13 +241,28 @@ end
 
 -- Check if we can afford a selected item and if there's space in the garden for it
 function ShopPanel:canPurchaseItem(itemProps)
-    return RING_MASTER:canAfford(itemProps.cost) and self.itemManager:canAddItem()
+    local canAfford = RING_MASTER:canAfford(itemProps.cost)
+    local canAddItem = self.itemManager:canAddItem()
+
+    -- DEBUG: log when we can't buy item
+    if not canAfford then
+        DEBUG_MANAGER:vPrint('Cannot afford item (cost=' .. itemProps.cost .. ', rings=' .. RING_MASTER.rings .. ')', 1)
+    end
+    if not canAddItem then
+        DEBUG_MANAGER:vPrint('Cannot purchaase, no room for new items', 1)
+    end
+
+    return canAfford and canAddItem
 end
 
 -- Update ring master and item manger and return instance of newly purchased item
 function ShopPanel:purchaseItem(itemProps)
     RING_MASTER:subtractRings(itemProps.cost)
-    return self.itemManager:addNewItem(itemProps.className)
+    -- Spawn item vertically centered on the edge of the shop panel
+    local x = SCREEN_WIDTH - self.width
+    local y = SCREEN_CENTER_Y
+    
+    return self.itemManager:addNewItem(itemProps.className, x, y)
 end
 
 -- Check for A press, attempt to purchase selected item
@@ -263,9 +281,6 @@ function ShopPanel:handleClick()
             DEBUG_MANAGER:vPrint(itemProps.className .. ' purchased, closing shop panel', 1)
             -- Pass new item to shop button and let it handle giving it to cursor
             self.shopButton:closeShopPanelAfterPurchase(item)
-        else
-            -- TODO: explain why?
-            DEBUG_MANAGER:vPrint('Unable to purchase ' .. itemProps.className, 1)
         end
     end
 end

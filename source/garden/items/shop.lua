@@ -21,6 +21,10 @@ local kSounds <const> = {
     cancel = pd.sound.sampleplayer.new('sounds/ui/cancel.wav'),
     nope = pd.sound.sampleplayer.new('sounds/ui/nope.wav'),
 }
+-- These samples are loud, so decrease volume of each
+for _,s in pairs(kSounds) do
+    s:setVolume(0.25)
+end
 
 -- --------------------------------------------------------------------------------
 -- Fonts

@@ -166,14 +166,25 @@ class('ShopPanel').extends(gfx.sprite)
 function ShopPanel:init(itemManager, shopButton)
     self.itemManager = itemManager
     self.shopButton = shopButton
-    -- Index of selected menu item
-    self.selectedIndex = 1
     
+    -- --------------------------------------------------------------------------------
+    -- UI and Cursor
+    -- --------------------------------------------------------------------------------
     -- Setup Playout elements for UI
     self:renderUI()
     -- Create shop cursor sprite
     self:createCursor()
+    -- TODO: precalculate cursor coords?
 
+    -- --------------------------------------------------------------------------------
+    -- Menu Selection
+    -- --------------------------------------------------------------------------------
+    -- Index of selected menu item
+    self.selectedIndex = 1
+
+    -- --------------------------------------------------------------------------------
+    -- Drawing
+    -- --------------------------------------------------------------------------------
     -- Draw from top right corner
     self:setCenter(1, 0)
     -- Move to right side of the screen
@@ -243,6 +254,7 @@ end
 function ShopPanel:moveCursorToSelectedIndex(noSound)
     local selected = self:getSelectedNode()
     -- Point anchored center left of the selected node
+    -- TODO: caching
     local pointerPos = getRectAnchor(selected.rect, playout.kAnchorCenterLeft):offsetBy(self.x - self.width, self.y)
     self.cursorSprite:moveTo(pointerPos:unpack())
     if not noSound then
@@ -264,7 +276,7 @@ function ShopPanel:canPurchaseItem(itemProps)
         DEBUG_MANAGER:vPrint('Cannot afford item (cost=' .. itemProps.cost .. ', rings=' .. RING_MASTER.rings .. ')', 1)
     end
     if not canAddItem then
-        DEBUG_MANAGER:vPrint('Cannot purchaase, no room for new items', 1)
+        DEBUG_MANAGER:vPrint('Cannot purchase, no room for new items', 1)
     end
 
     return canAfford and canAddItem

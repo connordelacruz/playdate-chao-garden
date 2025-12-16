@@ -287,8 +287,7 @@ end
 
 -- TODO: placeItem() (with validation). set self.item = nil and go back to active state
 function Cursor:placeItem()
-    -- TODO: need to handle moving vs stationary item pos for saving/loading
-    -- TODO: also make sure we're placing it in a valid spot, need to add mo collision shit for the pond and whatever
+    -- TODO: also make sure we're placing it in a valid spot, check garden bounds or whatever
     -- TODO: also also, if placing near a chao and it's something it can interact with, do that!
     self:setState(kActiveState)
 end
@@ -360,8 +359,6 @@ function Cursor:isTargetClickable(other)
     return isClickable
 end
 
--- TODO: RENAME THESE TO LIKE checkForClick() or whatever!!
-
 -- Handles clicking on an object when active
 function Cursor:handleClick()
     if pd.buttonJustPressed(pd.kButtonA) then
@@ -375,7 +372,6 @@ function Cursor:handleClick()
     end
 end
 
--- TODO: validation n shit
 -- Handle A press when holding an item
 function Cursor:handleGrabbedItemClick()
     if pd.buttonJustPressed(pd.kButtonA) then

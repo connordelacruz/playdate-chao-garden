@@ -35,7 +35,6 @@ function ItemManager:init()
         -- DEBUG: Don't save or load items, instead spawn one of each fruit.
         self:spawnAllFruits()
     else
-        -- TODO: this is a weird way to structure this, add separate no save flag?
         -- Attempt to load data
         self:loadData()
         -- Register save function
@@ -88,7 +87,6 @@ function ItemManager:canAddItem()
     return #self.items < kMaxItems
 end
 
--- TODO: this might be adding things twice!?
 function ItemManager:addItem(item)
     local success = self:canAddItem()
 
@@ -109,7 +107,6 @@ end
 -- If coordinates aren't specified, use default values.
 --
 -- Note: className is not validated
--- TODO: optional x,y params, set to default values if not specified. Implement in loadData()
 function ItemManager:addNewItem(className, x, y)
     x = x ~= nil and x or kItemDefaultX
     y = y ~= nil and y or kItemDefaultY

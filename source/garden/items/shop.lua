@@ -254,7 +254,6 @@ end
 function ShopPanel:moveCursorToSelectedIndex(noSound)
     local selected = self:getSelectedNode()
     -- Point anchored center left of the selected node
-    -- TODO: caching
     local pointerPos = getRectAnchor(selected.rect, playout.kAnchorCenterLeft):offsetBy(self.x - self.width, self.y)
     self.cursorSprite:moveTo(pointerPos:unpack())
     if not noSound then
@@ -309,7 +308,6 @@ function ShopPanel:handleClick()
             -- Pass new item to shop button and let it handle giving it to cursor
             self.shopButton:closeShopPanelAfterPurchase(item)
         else
-            -- TODO: visual indication that hints at why we can't purchase
             kSounds.nope:play()
         end
     end
@@ -387,7 +385,6 @@ end
 -- --------------------------------------------------------------------------------
 
 function ShopPanel:update()
-    -- TODO: RENAME to checkFor.*
     self:handleMove()
     self:handleClick()
 end

@@ -43,7 +43,6 @@ function Item:delete()
 end
 
 function Item:click(cursor)
-    -- TODO: when being clicked and dragged, indicate this to the itemManager so x/y pos is not saved until dropped!!!!!
     cursor:grabItem(self)
 end
 
@@ -174,6 +173,7 @@ end
 -- --------------------------------------------------------------------------------
 -- Fruit Classes
 -- --------------------------------------------------------------------------------
+-- TODO: can we use factory pattern to create these?
 -- See FRUITS declaration for details
 for className,props in pairs(FRUITS) do
     class(className, props).extends('Fruit')

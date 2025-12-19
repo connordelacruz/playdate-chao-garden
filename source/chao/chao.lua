@@ -148,13 +148,18 @@ class('ChaoWalkingState').extends('ChaoState')
 
 function ChaoWalkingState:enter()
     self.chao:randomizeAngle()
-    -- TODO: call some function to start walking animation
+    self.chao:playWalkingAnimation()
     -- TODO: pick an amount of time to wait before picking a state to transition to
 end
 
 function ChaoWalkingState:update()
+    self.chao:setImageFromWalkingAnimation()
     -- TODO: move chao
     -- TODO: pick a new state if enough time has elapsed
+end
+
+function ChaoWalkingState:exit()
+    self.chao:pauseWalkingAnimation()
 end
 
 -- ===============================================================================
@@ -176,15 +181,6 @@ function Chao:init(startX, startY)
         self:saveData()
     end)
     -- --------------------------------------------------------------------------------
-    -- Instance Variables
-    -- --------------------------------------------------------------------------------
-    -- Angle the Chao is facing
-    self.angle = nil
-    -- Cardinal direction based on self.angle
-    self.direction = nil
-    -- Set default to these as 270 degrees (straight down)
-    self:setAngle(270)
-    -- --------------------------------------------------------------------------------
     -- Spritesheet
     -- --------------------------------------------------------------------------------
     self.spritesheet = gfx.imagetable.new('images/chao/chao-idle-walk')
@@ -201,6 +197,25 @@ function Chao:init(startX, startY)
         [kLStep] = 1,
         [kRStep] = 2,
     }
+    -- Animation loop object for walking.
+    -- NOTE: Loop gets updated in setAngle() to account for facing direction.
+    self.walkingLoop = nil
+    self:initializeWalkingAnimation()
+    -- Set default image 
+    -- (This will get overwritten by state normally, but it's good to have a fallback)
+    self:spritesheetImage(kDown, kIdle)
+    -- --------------------------------------------------------------------------------
+    -- Instance Variables
+    -- --------------------------------------------------------------------------------
+    -- Speed Chao moves at (px / sec)
+    -- TODO: fine-tune; increase based on run stat!
+    self.speed = 100
+    -- Angle the Chao is facing
+    self.angle = nil
+    -- Cardinal direction based on self.angle
+    self.direction = nil
+    -- Set default to these as 270 degrees (straight down)
+    self:setAngle(270)
     -- --------------------------------------------------------------------------------
     -- State
     -- --------------------------------------------------------------------------------
@@ -318,7 +333,30 @@ function Chao:spritesheetImage(dir, action)
     return self.spritesheet[dirIndex + actionIndex]
 end
 
--- TODO: method to initialize and use walking animation (that accounts for direction)
+function Chao:initializeWalkingAnimation()
+    self.walkingLoop = gfx.animation.loop.new(500, self.spritesheet, true)
+    -- Default to paused
+    self.walkingLoop.paused = true
+end
+
+function Chao:updateWalkingAnimation()
+    local startIndex = self.spriteDir[self.direction] + self.spriteAction[kLStep]
+    local endIndex = self.spriteDir[self.direction] + self.spriteAction[kRStep]
+    self.walkingLoop.startFrame = startIndex
+    self.walkingLoop.endFrame = endIndex
+end
+
+function Chao:playWalkingAnimation()
+    self.walkingLoop.paused = false
+end
+
+function Chao:pauseWalkingAnimation()
+    self.walkingLoop.paused = true
+end
+
+function Chao:setImageFromWalkingAnimation()
+    self:setImage(self.walkingLoop:image())
+end
 
 -- --------------------------------------------------------------------------------
 -- Angle/Direction
@@ -326,8 +364,10 @@ end
 
 -- Set angle and calculate cardinal direction.
 function Chao:setAngle(angle)
-    self.angle = angle
+    self.angle = angle % 360
     self.direction = self:angleToDirection()
+    -- Update walking animation loop start/end frames
+    self:updateWalkingAnimation()
 end
 
 -- Returns a cardinal direction constant based on self.angle.
@@ -348,8 +388,27 @@ function Chao:randomizeAngle()
     self:setAngle(math.random(0, 360))
 end
 
+-- Flip angle's x direction (e.g. "bounce" off vertical boundary)
+function Chao:flipXDirection()
+    self:setAngle(180 - self.angle)
+end
+
+-- Flip angle's y direction (e.g. "bounce" off horizontal boundary)
+function Chao:flipYDirection()
+    self:setAngle(360 - self.angle)
+end
+
 -- --------------------------------------------------------------------------------
 -- Movement
 -- --------------------------------------------------------------------------------
+
+-- Returns target x,y coordinates calculated based on angle and speed.
+function Chao:getTargetCoordinates()
+    local rad = math.rad(self.angle)
+    -- TODO: make sure this is correct..
+    local targetX = self.x + self.speed * math.cos(rad) * DELTA_TIME
+    local targetY = self.y + self.speed * -math.sin(rad) * DELTA_TIME
+    return targetX, targetY
+end
 
 -- TODO: function handleMove(), moves in direction with collisions, flips direction if boundary is hit

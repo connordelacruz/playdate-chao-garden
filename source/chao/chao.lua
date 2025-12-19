@@ -107,10 +107,40 @@ local kLStep <const> = 'lStep'
 local kRStep <const> = 'rStep'
 
 -- ===============================================================================
+-- Chao States
+-- ===============================================================================
+
+-- --------------------------------------------------------------------------------
+-- Generic with common constructor
+-- --------------------------------------------------------------------------------
+class('ChaoState').extends('State')
+
+function ChaoState:init(chao)
+    self.chao = chao
+end
+
+-- --------------------------------------------------------------------------------
+-- Idle:
+-- - Chao standing still
+-- - Change states after a period of time
+-- --------------------------------------------------------------------------------
+local kIdleState <const> = 'idle'
+class('ChaoIdleState').extends('ChaoState')
+
+function ChaoIdleState:enter()
+    self.chao:setImageFromSpritesheet(kIdle)
+    -- TODO: pick an amount of time to wait before picking a state to transition to
+    -- TODO: can maybe use a timer if stopping/deleting the timer is part of exit()
+end
+
+function ChaoIdleState:update()
+    -- TODO: pick a new state if enough time has elapsed
+end
+
+-- ===============================================================================
 -- Chao Sprite Class
 -- ===============================================================================
--- TODO: implement states
-class('Chao').extends(gfx.sprite)
+class('Chao').extends('FSMSprite')
 
 function Chao:init(startX, startY)
     Chao.super.init(self)
@@ -125,7 +155,15 @@ function Chao:init(startX, startY)
     DATA_MANAGER:registerSaveFunction(kDataFilename, function ()
         self:saveData()
     end)
-
+    -- --------------------------------------------------------------------------------
+    -- Instance Variables
+    -- --------------------------------------------------------------------------------
+    -- Angle the Chao is facing
+    self.angle = nil
+    -- Cardinal direction based on self.angle
+    self.direction = nil
+    -- Set default to these as 270 degrees (straight down)
+    self:setAngle(270)
     -- --------------------------------------------------------------------------------
     -- Spritesheet
     -- --------------------------------------------------------------------------------
@@ -143,11 +181,17 @@ function Chao:init(startX, startY)
         [kLStep] = 1,
         [kRStep] = 2,
     }
-    self:setImage(self:spritesheetImage(kDown, kIdle))
     -- --------------------------------------------------------------------------------
     -- Collision
     -- --------------------------------------------------------------------------------
     self:setCollideRect(0, 0, self:getSize())
+    -- --------------------------------------------------------------------------------
+    -- State
+    -- --------------------------------------------------------------------------------
+    self.states = {
+        [kIdleState] = ChaoIdleState(self),
+    }
+    self:setInitialState(kIdleState)
     -- --------------------------------------------------------------------------------
     -- Initialization
     -- --------------------------------------------------------------------------------
@@ -159,10 +203,44 @@ end
 -- Sprite Functions
 -- --------------------------------------------------------------------------------
 
+-- Set sprite's image based on specified action and calculated direction.
+function Chao:setImageFromSpritesheet(action)
+    self:setImage(
+        self:spritesheetImage(
+            self:angleToDirection(),
+            action
+        )
+    )
+end
+
+-- Returns an image from self.spritesheet based on the direction and action.
 function Chao:spritesheetImage(dir, action)
     local dirIndex = self.spriteDir[dir]
     local actionIndex = self.spriteAction[action]
     return self.spritesheet[dirIndex + actionIndex]
+end
+
+-- Returns a cardinal direction constant based on self.angle.
+function Chao:angleToDirection()
+    local direction = kRight
+    if self.angle >= 45 and self.angle < 135 then
+        direction = kUp
+    elseif self.angle >= 135 and self.angle < 225 then
+        direction = kLeft
+    elseif self.angle >= 225 and self.angle < 315 then
+        direction = kDown
+    end
+    return direction
+end
+
+-- --------------------------------------------------------------------------------
+-- Angle/Direction
+-- --------------------------------------------------------------------------------
+
+-- Set angle and calculate cardinal direction.
+function Chao:setAngle(angle)
+    self.angle = angle
+    self.direction = self:angleToDirection()
 end
 
 -- --------------------------------------------------------------------------------
@@ -239,14 +317,4 @@ end
 
 function Chao:setName(newName)
     self.data.name = newName
-end
-
--- --------------------------------------------------------------------------------
--- Update
--- --------------------------------------------------------------------------------
-
-function Chao:update()
-    local ms = pd.getCurrentTimeMilliseconds()
-    local spriteIndex = (ms // 500 % #self.spritesheet) + 1
-    self:setImage(self.spritesheet[spriteIndex])
 end

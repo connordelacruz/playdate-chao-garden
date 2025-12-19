@@ -130,10 +130,30 @@ class('ChaoIdleState').extends('ChaoState')
 function ChaoIdleState:enter()
     self.chao:setImageFromSpritesheet(kIdle)
     -- TODO: pick an amount of time to wait before picking a state to transition to
-    -- TODO: can maybe use a timer if stopping/deleting the timer is part of exit()
 end
 
 function ChaoIdleState:update()
+    -- TODO: pick a new state if enough time has elapsed
+end
+
+-- --------------------------------------------------------------------------------
+-- Walking:
+-- - Randomize angle on enter()
+-- - Chao starts walking at that angle
+-- - If Barrier is hit, flip angle
+-- - Change states after a period of time
+-- --------------------------------------------------------------------------------
+local kWalkingState <const> = 'walking'
+class('ChaoWalkingState').extends('ChaoState')
+
+function ChaoWalkingState:enter()
+    self.chao:randomizeAngle()
+    -- TODO: call some function to start walking animation
+    -- TODO: pick an amount of time to wait before picking a state to transition to
+end
+
+function ChaoWalkingState:update()
+    -- TODO: move chao
     -- TODO: pick a new state if enough time has elapsed
 end
 
@@ -182,65 +202,23 @@ function Chao:init(startX, startY)
         [kRStep] = 2,
     }
     -- --------------------------------------------------------------------------------
-    -- Collision
-    -- --------------------------------------------------------------------------------
-    self:setCollideRect(0, 0, self:getSize())
-    -- --------------------------------------------------------------------------------
     -- State
     -- --------------------------------------------------------------------------------
     self.states = {
         [kIdleState] = ChaoIdleState(self),
+        [kWalkingState] = ChaoWalkingState(self),
     }
     self:setInitialState(kIdleState)
+    -- --------------------------------------------------------------------------------
+    -- Collision
+    -- --------------------------------------------------------------------------------
+    -- TODO: tags, collisionResponse and all that
+    self:setCollideRect(0, 0, self:getSize())
     -- --------------------------------------------------------------------------------
     -- Initialization
     -- --------------------------------------------------------------------------------
     self:moveTo(startX, startY)
     self:add()
-end
-
--- --------------------------------------------------------------------------------
--- Sprite Functions
--- --------------------------------------------------------------------------------
-
--- Set sprite's image based on specified action and calculated direction.
-function Chao:setImageFromSpritesheet(action)
-    self:setImage(
-        self:spritesheetImage(
-            self:angleToDirection(),
-            action
-        )
-    )
-end
-
--- Returns an image from self.spritesheet based on the direction and action.
-function Chao:spritesheetImage(dir, action)
-    local dirIndex = self.spriteDir[dir]
-    local actionIndex = self.spriteAction[action]
-    return self.spritesheet[dirIndex + actionIndex]
-end
-
--- Returns a cardinal direction constant based on self.angle.
-function Chao:angleToDirection()
-    local direction = kRight
-    if self.angle >= 45 and self.angle < 135 then
-        direction = kUp
-    elseif self.angle >= 135 and self.angle < 225 then
-        direction = kLeft
-    elseif self.angle >= 225 and self.angle < 315 then
-        direction = kDown
-    end
-    return direction
-end
-
--- --------------------------------------------------------------------------------
--- Angle/Direction
--- --------------------------------------------------------------------------------
-
--- Set angle and calculate cardinal direction.
-function Chao:setAngle(angle)
-    self.angle = angle
-    self.direction = self:angleToDirection()
 end
 
 -- --------------------------------------------------------------------------------
@@ -318,3 +296,60 @@ end
 function Chao:setName(newName)
     self.data.name = newName
 end
+
+-- --------------------------------------------------------------------------------
+-- Image Functions
+-- --------------------------------------------------------------------------------
+
+-- Set sprite's image based on specified action and calculated direction.
+function Chao:setImageFromSpritesheet(action)
+    self:setImage(
+        self:spritesheetImage(
+            self.direction,
+            action
+        )
+    )
+end
+
+-- Returns an image from self.spritesheet based on the direction and action.
+function Chao:spritesheetImage(dir, action)
+    local dirIndex = self.spriteDir[dir]
+    local actionIndex = self.spriteAction[action]
+    return self.spritesheet[dirIndex + actionIndex]
+end
+
+-- TODO: method to initialize and use walking animation (that accounts for direction)
+
+-- --------------------------------------------------------------------------------
+-- Angle/Direction
+-- --------------------------------------------------------------------------------
+
+-- Set angle and calculate cardinal direction.
+function Chao:setAngle(angle)
+    self.angle = angle
+    self.direction = self:angleToDirection()
+end
+
+-- Returns a cardinal direction constant based on self.angle.
+function Chao:angleToDirection()
+    local direction = kRight
+    if self.angle >= 45 and self.angle < 135 then
+        direction = kUp
+    elseif self.angle >= 135 and self.angle < 225 then
+        direction = kLeft
+    elseif self.angle >= 225 and self.angle < 315 then
+        direction = kDown
+    end
+    return direction
+end
+
+-- Set a random angle.
+function Chao:randomizeAngle()
+    self:setAngle(math.random(0, 360))
+end
+
+-- --------------------------------------------------------------------------------
+-- Movement
+-- --------------------------------------------------------------------------------
+
+-- TODO: function handleMove(), moves in direction with collisions, flips direction if boundary is hit

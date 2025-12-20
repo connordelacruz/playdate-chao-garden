@@ -107,6 +107,16 @@ local kLStep <const> = 'lStep'
 local kRStep <const> = 'rStep'
 
 -- ===============================================================================
+-- Collisions
+-- ===============================================================================
+-- Tags that Chao should collide with
+local kCollidesWithTags <const> = {
+    TAGS.SCREEN_BOUNDARY,
+    TAGS.GARDEN_BOUNDARY,
+    TAGS.POND,
+}
+
+-- ===============================================================================
 -- Chao States
 -- ===============================================================================
 
@@ -401,31 +411,54 @@ function Chao:flipYDirection()
 end
 
 -- --------------------------------------------------------------------------------
+-- Collision
+-- --------------------------------------------------------------------------------
+
+function Chao:shouldCollideWithTag(tag)
+    for i=1,#kCollidesWithTags do
+        local collidesWithTag = kCollidesWithTags[i]
+        if collidesWithTag == tag then
+            return true
+        end
+    end
+    return false
+end
+
+function Chao:collisionResponse(other)
+    -- Overlap by default
+    local collideType = gfx.sprite.kCollisionTypeOverlap
+    if self:shouldCollideWithTag(other:getTag()) then
+        collideType = gfx.sprite.kCollisionTypeFreeze
+    end
+    return collideType
+end
+
+-- --------------------------------------------------------------------------------
 -- Movement
 -- --------------------------------------------------------------------------------
 
 -- Returns target x,y coordinates calculated based on angle and speed.
 function Chao:getTargetCoordinates()
     local rad = math.rad(self.angle)
-    -- TODO: make sure this is correct..
     local targetX = self.x + self.speed * math.cos(rad) * DELTA_TIME
     local targetY = self.y + self.speed * -math.sin(rad) * DELTA_TIME
     return targetX, targetY
 end
 
--- TODO: DOC
+-- Move walking Chao. Handles wall collisions.
+-- Called on update() in walking state
 function Chao:handleMove()
     local targetX, targetY = self:getTargetCoordinates()
     local _, _, collisions, _ = self:moveWithCollisions(targetX, targetY)
-    -- TODO: handle wall collide
     for i=1, #collisions do
         local collision = collisions[i]
-        -- TODO: probably some tag checking, though maybe collision response will handle that?
-        if collision.normal.x ~= 0 then
-            self:flipXDirection()
-        end
-        if collision.normal.y ~= 0 then
-            self:flipYDirection()
+        if collision.type ~= gfx.sprite.kCollisionTypeOverlap then
+            if collision.normal.x ~= 0 then
+                self:flipXDirection()
+            end
+            if collision.normal.y ~= 0 then
+                self:flipYDirection()
+            end
         end
     end
 end

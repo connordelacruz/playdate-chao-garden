@@ -157,6 +157,7 @@ local kWalkingState <const> = 'walking'
 class('ChaoWalkingState').extends('ChaoState')
 
 function ChaoWalkingState:enter()
+    -- TODO: self.enterTimestamp = pd.getCurrentTimeMilliseconds()
     self.chao:randomizeAngle()
     self.chao:playWalkingAnimation()
     -- TODO: pick an amount of time to wait before picking a state to transition to
@@ -224,7 +225,7 @@ function Chao:init(startX, startY)
     -- --------------------------------------------------------------------------------
     -- Speed Chao moves at (px / sec)
     -- TODO: fine-tune; increase based on run stat!
-    self.speed = 50
+    self.speed = 25
     -- Angle the Chao is facing
     self.angle = nil
     -- Cardinal direction based on self.angle
@@ -346,27 +347,36 @@ function Chao:spritesheetImage(dir, action)
     return self.spritesheet[dirIndex + actionIndex]
 end
 
+-- Initialize self.walkingLoop.
 function Chao:initializeWalkingAnimation()
     self.walkingLoop = gfx.animation.loop.new(500, self.spritesheet, true)
     -- Default to paused
     self.walkingLoop.paused = true
 end
 
+-- Update self.walkingLoop, accounting for self.direction.
 function Chao:updateWalkingAnimation()
-    local startIndex = self.spriteDir[self.direction] + self.spriteAction[kLStep]
-    local endIndex = self.spriteDir[self.direction] + self.spriteAction[kRStep]
-    self.walkingLoop.startFrame = startIndex
-    self.walkingLoop.endFrame = endIndex
+    -- Build animation (insert idle frame between steps)
+    local newFrames = {
+        self:spritesheetImage(self.direction, kLStep),
+        self:spritesheetImage(self.direction, kIdle),
+        self:spritesheetImage(self.direction, kRStep),
+        self:spritesheetImage(self.direction, kIdle),
+    }
+    self.walkingLoop:setImageTable(newFrames)
 end
 
+-- Shorthand to play loop.
 function Chao:playWalkingAnimation()
     self.walkingLoop.paused = false
 end
 
+-- Shorthand to pause loop.
 function Chao:pauseWalkingAnimation()
     self.walkingLoop.paused = true
 end
 
+-- Set sprite image to self.walkingLoop's current image.
 function Chao:setImageFromWalkingAnimation()
     self:setImage(self.walkingLoop:image())
 end

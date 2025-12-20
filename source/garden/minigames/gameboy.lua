@@ -14,5 +14,6 @@ function Gameboy:init(x, y)
     -- TODO: tags n all that
 
     self:moveTo(x, y)
+    self:setZIndex(Z_INDEX.GARDEN_GB)
     self:add()
 end

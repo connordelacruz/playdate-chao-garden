@@ -245,6 +245,7 @@ function Chao:init(startX, startY)
     -- Initialization
     -- --------------------------------------------------------------------------------
     self:moveTo(startX, startY)
+    self:setZIndex(Z_INDEX.GARDEN_CHAO)
     self:add()
 end
 

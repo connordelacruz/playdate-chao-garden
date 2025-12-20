@@ -121,12 +121,56 @@ local kCollidesWithTags <const> = {
 -- ===============================================================================
 
 -- --------------------------------------------------------------------------------
--- Generic with common constructor
+-- State name constants
 -- --------------------------------------------------------------------------------
-class('ChaoState').extends('State')
+local kIdleState <const> = 'idle'
+local kWalkingState <const> = 'walking'
+
+-- --------------------------------------------------------------------------------
+-- Generic with common constructor and default props
+-- --------------------------------------------------------------------------------
+class('ChaoState', {
+    -- Min/max time in seconds before picking a new state (if applicable)
+    minDuration = 3,
+    maxDuration = 7,
+    -- States we can transition to from this state
+    nextStateOptions = {},
+}).extends('State')
 
 function ChaoState:init(chao)
     self.chao = chao
+    -- Initialize transitionAfter (this should get updated on enter())
+    self.transitionAfter = pd.getCurrentTimeMilliseconds()
+end
+
+-- Helper to calculate timestamp after which a new state should be selected.
+function ChaoState:changeStateTimestamp()
+    local currentTime = pd.getCurrentTimeMilliseconds()
+    local duration = math.random(self.minDuration * 1000, self.maxDuration * 1000)
+    return currentTime + duration
+end
+
+-- Set self.transitionAfter to return value of changeStateTimestamp().
+function ChaoState:setDuration()
+    self.transitionAfter = self:changeStateTimestamp()
+end
+
+-- Returns state name to transition to if duration is up,
+-- or false if either duration is not up or nextStateOptions is empty.
+function ChaoState:transitionToState()
+    if #self.nextStateOptions == 0 or pd.getCurrentTimeMilliseconds() < self.transitionAfter then
+        return false
+    else
+        return self.nextStateOptions[math.random(1, #self.nextStateOptions)]
+    end
+end
+
+-- Change Chao state if duration is up.
+function ChaoState:changeStateIfPastDuration()
+    local nextState = self:transitionToState()
+    if nextState then
+        self.chao:setState(nextState)
+    end
 end
 
 -- --------------------------------------------------------------------------------
@@ -134,16 +178,20 @@ end
 -- - Chao standing still
 -- - Change states after a period of time
 -- --------------------------------------------------------------------------------
-local kIdleState <const> = 'idle'
-class('ChaoIdleState').extends('ChaoState')
+class('ChaoIdleState', {
+    nextStateOptions = {
+        kWalkingState,
+    },
+}).extends('ChaoState')
 
 function ChaoIdleState:enter()
+    self.chao:setAngle(270)
     self.chao:setImageFromSpritesheet(kIdle)
-    -- TODO: pick an amount of time to wait before picking a state to transition to
+    self:setDuration()
 end
 
 function ChaoIdleState:update()
-    -- TODO: pick a new state if enough time has elapsed
+    self:changeStateIfPastDuration()
 end
 
 -- --------------------------------------------------------------------------------
@@ -153,20 +201,25 @@ end
 -- - If Barrier is hit, flip angle
 -- - Change states after a period of time
 -- --------------------------------------------------------------------------------
-local kWalkingState <const> = 'walking'
-class('ChaoWalkingState').extends('ChaoState')
+class('ChaoWalkingState', {
+    minDuration = 5,
+    maxDuration = 10,
+    nextStateOptions = {
+        kIdleState,
+        kWalkingState,
+    },
+}).extends('ChaoState')
 
 function ChaoWalkingState:enter()
-    -- TODO: self.enterTimestamp = pd.getCurrentTimeMilliseconds()
     self.chao:randomizeAngle()
     self.chao:playWalkingAnimation()
-    -- TODO: pick an amount of time to wait before picking a state to transition to
+    self:setDuration()
 end
 
 function ChaoWalkingState:update()
     self.chao:setImageFromWalkingAnimation()
     self.chao:handleMove()
-    -- TODO: pick a new state if enough time has elapsed
+    self:changeStateIfPastDuration()
 end
 
 function ChaoWalkingState:exit()
@@ -217,7 +270,6 @@ function Chao:init(startX, startY)
     -- --------------------------------------------------------------------------------
     -- Collision
     -- --------------------------------------------------------------------------------
-    -- TODO: tags, collisionResponse and all that
     self:setCollideRect(0, 0, self:getSize())
     self:setTag(TAGS.CHAO)
     -- --------------------------------------------------------------------------------
@@ -239,9 +291,7 @@ function Chao:init(startX, startY)
         [kIdleState] = ChaoIdleState(self),
         [kWalkingState] = ChaoWalkingState(self),
     }
-    -- TODO: DEBUGGING!!!!!!!!
-    -- self:setInitialState(kIdleState)
-    self:setInitialState(kWalkingState)
+    self:setInitialState(kIdleState)
     -- --------------------------------------------------------------------------------
     -- Initialization
     -- --------------------------------------------------------------------------------

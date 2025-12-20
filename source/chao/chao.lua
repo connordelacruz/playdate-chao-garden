@@ -154,7 +154,7 @@ end
 
 function ChaoWalkingState:update()
     self.chao:setImageFromWalkingAnimation()
-    -- TODO: move chao
+    self.chao:handleMove()
     -- TODO: pick a new state if enough time has elapsed
 end
 
@@ -202,14 +202,19 @@ function Chao:init(startX, startY)
     self.walkingLoop = nil
     self:initializeWalkingAnimation()
     -- Set default image 
-    -- (This will get overwritten by state normally, but it's good to have a fallback)
-    self:spritesheetImage(kDown, kIdle)
+    self:setImage(self:spritesheetImage(kDown, kIdle))
+    -- --------------------------------------------------------------------------------
+    -- Collision
+    -- --------------------------------------------------------------------------------
+    -- TODO: tags, collisionResponse and all that
+    self:setCollideRect(0, 0, self:getSize())
+    self:setTag(TAGS.CHAO)
     -- --------------------------------------------------------------------------------
     -- Instance Variables
     -- --------------------------------------------------------------------------------
     -- Speed Chao moves at (px / sec)
     -- TODO: fine-tune; increase based on run stat!
-    self.speed = 100
+    self.speed = 50
     -- Angle the Chao is facing
     self.angle = nil
     -- Cardinal direction based on self.angle
@@ -223,12 +228,9 @@ function Chao:init(startX, startY)
         [kIdleState] = ChaoIdleState(self),
         [kWalkingState] = ChaoWalkingState(self),
     }
-    self:setInitialState(kIdleState)
-    -- --------------------------------------------------------------------------------
-    -- Collision
-    -- --------------------------------------------------------------------------------
-    -- TODO: tags, collisionResponse and all that
-    self:setCollideRect(0, 0, self:getSize())
+    -- TODO: DEBUGGING!!!!!!!!
+    -- self:setInitialState(kIdleState)
+    self:setInitialState(kWalkingState)
     -- --------------------------------------------------------------------------------
     -- Initialization
     -- --------------------------------------------------------------------------------
@@ -411,4 +413,19 @@ function Chao:getTargetCoordinates()
     return targetX, targetY
 end
 
--- TODO: function handleMove(), moves in direction with collisions, flips direction if boundary is hit
+-- TODO: DOC
+function Chao:handleMove()
+    local targetX, targetY = self:getTargetCoordinates()
+    local _, _, collisions, _ = self:moveWithCollisions(targetX, targetY)
+    -- TODO: handle wall collide
+    for i=1, #collisions do
+        local collision = collisions[i]
+        -- TODO: probably some tag checking, though maybe collision response will handle that?
+        if collision.normal.x ~= 0 then
+            self:flipXDirection()
+        end
+        if collision.normal.y ~= 0 then
+            self:flipYDirection()
+        end
+    end
+end

@@ -179,7 +179,7 @@ end
 
 -- --------------------------------------------------------------------------------
 -- Idle:
--- - Chao standing still
+-- - Chao standing or sitting still
 -- - Change states after a period of time
 -- --------------------------------------------------------------------------------
 class('ChaoIdleState', {
@@ -189,7 +189,11 @@ class('ChaoIdleState', {
 }).extends('ChaoState')
 
 function ChaoIdleState:enter()
-    self.chao:setImageFromSpritesheet(kIdle)
+    if math.random(0, 1) == 1 then
+        self.chao:setImageFromSitSpritesheet()
+    else
+        self.chao:setImageFromWalkIdleSpritesheet(kIdle)
+    end
     self:setDuration()
 end
 
@@ -236,9 +240,9 @@ class('Chao').extends('FSMSprite')
 
 function Chao:init(startX, startY)
     Chao.super.init(self)
-    -- --------------------------------------------------------------------------------
+    -- ================================================================================
     -- Data and Stats
-    -- --------------------------------------------------------------------------------
+    -- ================================================================================
     -- Set initial data
     self:initData()
     -- Attempt to load data
@@ -247,19 +251,22 @@ function Chao:init(startX, startY)
     DATA_MANAGER:registerSaveFunction(kDataFilename, function ()
         self:saveData()
     end)
+    -- ================================================================================
+    -- Spritesheets
+    -- ================================================================================
     -- --------------------------------------------------------------------------------
-    -- Spritesheet
+    -- Walking/Standing
     -- --------------------------------------------------------------------------------
-    self.spritesheet = gfx.imagetable.new('images/chao/chao-idle-walk')
+    self.walkIdleSpritesheet = gfx.imagetable.new('images/chao/chao-idle-walk')
     -- Index starts for directions
-    self.spriteDir = {
+    self.walkIdleSpriteDir = {
         [kDown]  = 1,
         [kLeft]  = 4,
         [kUp]    = 7,
         [kRight] = 10,
     }
     -- Index modifiers to add to direction for idle and stepping
-    self.spriteAction = {
+    self.walkIdleSpriteAction = {
         [kIdle]  = 0,
         [kLStep] = 1,
         [kRStep] = 2,
@@ -268,16 +275,30 @@ function Chao:init(startX, startY)
     -- NOTE: Loop gets updated in setAngle() to account for facing direction.
     self.walkingLoop = nil
     self:initializeWalkingAnimation()
-    -- Set default image 
-    self:setImage(self:spritesheetImage(kDown, kIdle))
     -- --------------------------------------------------------------------------------
+    -- Sitting
+    -- --------------------------------------------------------------------------------
+    self.sitSpritesheet = gfx.imagetable.new('images/chao/chao-sit')
+    -- Indexes for facing directions.
+    -- NOTE: No sprite for facing up, probably cuz it looks weird.
+    self.sitSpriteDir = {
+        [kDown] = 1,
+        [kLeft] = 2,
+        [kRight] = 3,
+    }
+    -- --------------------------------------------------------------------------------
+    -- Default image 
+    -- --------------------------------------------------------------------------------
+    self.defaultImage = self:walkIdleSpritesheetImage(kDown, kIdle)
+    self:setImage(self.defaultImage)
+    -- ================================================================================
     -- Collision
-    -- --------------------------------------------------------------------------------
+    -- ================================================================================
     self:setCollideRect(0, 0, self:getSize())
     self:setTag(TAGS.CHAO)
-    -- --------------------------------------------------------------------------------
+    -- ================================================================================
     -- Instance Variables
-    -- --------------------------------------------------------------------------------
+    -- ================================================================================
     -- Speed Chao moves at (px / sec)
     -- TODO: increase based on run stat?
     self.speed = 20
@@ -287,9 +308,9 @@ function Chao:init(startX, startY)
     self.direction = nil
     -- Set default to these as 270 degrees (straight down)
     self:setAngle(270)
-    -- --------------------------------------------------------------------------------
+    -- ================================================================================
     -- State
-    -- --------------------------------------------------------------------------------
+    -- ================================================================================
     self.states = {
         [kIdleState] = ChaoIdleState(self),
         [kWalkingState] = ChaoWalkingState(self),
@@ -297,9 +318,9 @@ function Chao:init(startX, startY)
     self:setInitialState(kIdleState)
     -- When game starts, explicitly set duration of idle state to 3000 ms
     self.state:setDuration(3000)
-    -- --------------------------------------------------------------------------------
+    -- ================================================================================
     -- Initialization
-    -- --------------------------------------------------------------------------------
+    -- ================================================================================
     self:moveTo(startX, startY)
     self:setZIndex(Z_INDEX.GARDEN_CHAO)
     self:add()
@@ -382,13 +403,13 @@ function Chao:setName(newName)
 end
 
 -- --------------------------------------------------------------------------------
--- Image Functions
+-- Walk/Idle Image Functions
 -- --------------------------------------------------------------------------------
 
--- Set sprite's image based on specified action and calculated direction.
-function Chao:setImageFromSpritesheet(action)
+-- From the walking/idle spritesheet, set sprite's image based on specified action and calculated direction.
+function Chao:setImageFromWalkIdleSpritesheet(action)
     self:setImage(
-        self:spritesheetImage(
+        self:walkIdleSpritesheetImage(
             self.direction,
             action
         )
@@ -396,15 +417,15 @@ function Chao:setImageFromSpritesheet(action)
 end
 
 -- Returns an image from self.spritesheet based on the direction and action.
-function Chao:spritesheetImage(dir, action)
-    local dirIndex = self.spriteDir[dir]
-    local actionIndex = self.spriteAction[action]
-    return self.spritesheet[dirIndex + actionIndex]
+function Chao:walkIdleSpritesheetImage(dir, action)
+    local dirIndex = self.walkIdleSpriteDir[dir]
+    local actionIndex = self.walkIdleSpriteAction[action]
+    return self.walkIdleSpritesheet[dirIndex + actionIndex]
 end
 
 -- Initialize self.walkingLoop.
 function Chao:initializeWalkingAnimation()
-    self.walkingLoop = gfx.animation.loop.new(500, self.spritesheet, true)
+    self.walkingLoop = gfx.animation.loop.new(500, self.walkIdleSpritesheet, true)
     -- Default to paused
     self.walkingLoop.paused = true
 end
@@ -413,10 +434,10 @@ end
 function Chao:updateWalkingAnimation()
     -- Build animation (insert idle frame between steps)
     local newFrames = {
-        self:spritesheetImage(self.direction, kLStep),
-        self:spritesheetImage(self.direction, kIdle),
-        self:spritesheetImage(self.direction, kRStep),
-        self:spritesheetImage(self.direction, kIdle),
+        self:walkIdleSpritesheetImage(self.direction, kLStep),
+        self:walkIdleSpritesheetImage(self.direction, kIdle),
+        self:walkIdleSpritesheetImage(self.direction, kRStep),
+        self:walkIdleSpritesheetImage(self.direction, kIdle),
     }
     self.walkingLoop:setImageTable(newFrames)
 end
@@ -434,6 +455,26 @@ end
 -- Set sprite image to self.walkingLoop's current image.
 function Chao:setImageFromWalkingAnimation()
     self:setImage(self.walkingLoop:image())
+end
+
+-- --------------------------------------------------------------------------------
+-- Sit Image Functions
+-- --------------------------------------------------------------------------------
+
+-- NOTE: Since there's no upward-facing sitting sprite, will default to standing image if self.direction == kUp
+function Chao:setImageFromSitSpritesheet()
+    self:setImage(
+        self:sitSpritesheetImage(self.direction)
+    )
+end
+
+-- NOTE: kUp is not a valid index, so will default to standing in that case.
+function Chao:sitSpritesheetImage(dir)
+    if dir ~= kUp then
+        return self.sitSpritesheet[self.sitSpriteDir[dir]]
+    else
+        return self:walkIdleSpritesheetImage(dir, kIdle)
+    end
 end
 
 -- --------------------------------------------------------------------------------

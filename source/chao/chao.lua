@@ -144,15 +144,19 @@ function ChaoState:init(chao)
 end
 
 -- Helper to calculate timestamp after which a new state should be selected.
-function ChaoState:changeStateTimestamp()
+-- If duration is not specified, will randomly pick between minDuration and maxDuration.
+function ChaoState:changeStateTimestamp(duration)
     local currentTime = pd.getCurrentTimeMilliseconds()
-    local duration = math.random(self.minDuration * 1000, self.maxDuration * 1000)
+    if duration == nil then
+        duration = math.random(self.minDuration * 1000, self.maxDuration * 1000)
+    end
     return currentTime + duration
 end
 
 -- Set self.transitionAfter to return value of changeStateTimestamp().
-function ChaoState:setDuration()
-    self.transitionAfter = self:changeStateTimestamp()
+-- Takes optional duration parameter (ms)
+function ChaoState:setDuration(duration)
+    self.transitionAfter = self:changeStateTimestamp(duration)
 end
 
 -- Returns state name to transition to if duration is up,
@@ -185,7 +189,6 @@ class('ChaoIdleState', {
 }).extends('ChaoState')
 
 function ChaoIdleState:enter()
-    self.chao:setAngle(270)
     self.chao:setImageFromSpritesheet(kIdle)
     self:setDuration()
 end
@@ -276,8 +279,8 @@ function Chao:init(startX, startY)
     -- Instance Variables
     -- --------------------------------------------------------------------------------
     -- Speed Chao moves at (px / sec)
-    -- TODO: fine-tune; increase based on run stat!
-    self.speed = 25
+    -- TODO: increase based on run stat?
+    self.speed = 20
     -- Angle the Chao is facing
     self.angle = nil
     -- Cardinal direction based on self.angle
@@ -292,6 +295,8 @@ function Chao:init(startX, startY)
         [kWalkingState] = ChaoWalkingState(self),
     }
     self:setInitialState(kIdleState)
+    -- When game starts, explicitly set duration of idle state to 3000 ms
+    self.state:setDuration(3000)
     -- --------------------------------------------------------------------------------
     -- Initialization
     -- --------------------------------------------------------------------------------

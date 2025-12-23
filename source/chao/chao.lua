@@ -138,7 +138,10 @@ class('ChaoState', {
     -- States we can transition to from this state
     nextStateOptions = {},
     -- Whether the Chao can be pet in this state
+    -- TODO: make this more robust? Per-state click()? Also handle eating
     canPet = true,
+    -- Whether the Chao can accept food in this state
+    canEat = true,
 }).extends('State')
 
 function ChaoState:init(chao)
@@ -245,25 +248,36 @@ end
 -- - Play petting animation
 -- - Increase mood 
 -- - Transition to idle state once animation completes
+--
+-- NOTE:
+-- - In Chao:click(), make sure to pass a reference to the cursor to the instance of this state
 -- --------------------------------------------------------------------------------
 class('ChaoPettingState', {
     -- Not that this should happen since the cursor is locked, but whatever:
     canPet = false,
+    canEat = false,
 }).extends('ChaoState')
 
 function ChaoPettingState:enter()
     self.chao:setAngle(270)
-    -- TODO: unpause pet animation
+    self.chao:startPettingAnimation()
 end
 
 function ChaoPettingState:update()
-    -- TODO: set image to petting animation frame
-    -- TODO: check if animation ends, transition to idle
+    self.chao:setImageFromPettingAnimation()
+    if self.chao:hasPettingAnimationFinished() then
+        self.chao:setState(kIdleState)
+    end
 end
 
 function ChaoPettingState:exit()
-    -- TODO: if mood not max'd, +1
-    -- TODO: some way to communicate to cursor
+    -- TODO: !!!! UPDATE STATUS PANEL !!!!
+    self.chao:boostMood()
+    -- TODO: see if this is necessary
+    self.chao:pausePettingAnimation()
+    if self.cursor ~= nil and self.cursor.className == 'Cursor' then
+        self.cursor:enable()
+    end
 end
 
 -- ===============================================================================
@@ -444,6 +458,28 @@ function Chao:setName(newName)
 end
 
 -- --------------------------------------------------------------------------------
+-- Mood Functions
+-- --------------------------------------------------------------------------------
+-- TODO: logic for decreasing mood over time
+
+-- Set mood value. Ensures value is between 0 and 100.
+function Chao:setMood(val)
+    if val < 0 then
+        val = 0
+    elseif val > 100 then
+        val = 100
+    end
+    self.data.mood = val
+end
+
+-- Boost mood by 10% (up to 100%)
+function Chao:boostMood()
+    if self.data.mood < 100 then
+        self:setMood(self.data.mood + 10)
+    end
+end
+
+-- --------------------------------------------------------------------------------
 -- Walk/Idle Image Functions
 -- --------------------------------------------------------------------------------
 
@@ -523,14 +559,14 @@ end
 -- --------------------------------------------------------------------------------
 
 function Chao:initializePettingAnimation()
-    -- Insert upright frame in between leaning frames
-    -- TODO: repeat animation one more loop?
+    -- Insert upright frame in between leaning frames and repeat animation twice
     local pettingFrames = {
         self.pettingSpritesheet[1],
         self.pettingSpritesheet[2],
         self.pettingSpritesheet[1],
         self.pettingSpritesheet[3],
     }
+    -- TODO: figure out duration
     self.pettingLoop = gfx.animation.loop.new(500, pettingFrames, false)
     self.pettingLoop.paused = true
 end
@@ -644,5 +680,20 @@ function Chao:handleMove()
                 self:flipYDirection()
             end
         end
+    end
+end
+
+-- --------------------------------------------------------------------------------
+-- Cursor Interactions
+-- --------------------------------------------------------------------------------
+
+function Chao:click(cursor)
+    -- TODO: Check if cursor is holding food?
+    if self.state.canPet then
+        self:setState(kPettingState)
+        -- Pass reference to cursor for syncing animation
+        self.state.cursor = cursor
+        -- Set cursor state to petting
+        cursor:pet(self)
     end
 end

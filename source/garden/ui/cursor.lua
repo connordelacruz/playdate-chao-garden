@@ -115,6 +115,23 @@ function CursorGrabbingState:exit()
     self.cursor.item = nil
 end
 
+-- --------------------------------------------------------------------------------
+-- Petting:
+-- - Move cursor back and forth above Chao
+-- - Ignore all inputs
+--
+-- NOTE:
+-- - Cursor will remain in this state until something changes its state
+-- --------------------------------------------------------------------------------
+local kPettingState <const> = 'petting'
+class('CursorPettingState').extends('CursorState')
+
+function CursorPettingState:enter()
+    self.cursor:setPettingImage()
+end
+
+-- TODO: move back and forth relative to chao on update()
+
 -- ================================================================================
 -- Cursor Sprite Class
 -- ================================================================================
@@ -150,6 +167,7 @@ function Cursor:init(startX, startY)
         [kActiveState] = CursorActiveState(self),
         [kDisabledState] = CursorDisabledState(self),
         [kGrabbingState] = CursorGrabbingState(self),
+        [kPettingState] = CursorPettingState(self),
     }
     self:setInitialState(kActiveState)
     -- --------------------------------------------------------------------------------
@@ -261,6 +279,11 @@ function Cursor:handsFree()
     return self.state.handsFree
 end
 
+function Cursor:pet(chao)
+    -- TODO: move cursor to chao's head
+    self:setState(kPettingState)
+end
+
 -- --------------------------------------------------------------------------------
 -- Grabbing Items
 -- --------------------------------------------------------------------------------
@@ -342,7 +365,8 @@ end
 -- Check if a sprite's collision tag is in our list of clickables.
 function Cursor:isTagClickable(otherTag)
     -- TODO: caching? map from tag -> true?
-    for _,clickableTag in ipairs(kClickableTags) do
+    for i=1,#kClickableTags do
+        local clickableTag = kClickableTags[i]
         if otherTag == clickableTag then
             return true
         end
@@ -350,7 +374,10 @@ function Cursor:isTagClickable(otherTag)
     return false
 end
 
--- Check if a sprite with collisions is clickable
+-- Check if a sprite with collisions is clickable.
+-- A sprite is clickable if:
+-- - Its tag is in kClickableTags
+-- - It has a click() method
 function Cursor:isTargetClickable(other)
     local isClickable = self:isTagClickable(other:getTag())
     if isClickable then

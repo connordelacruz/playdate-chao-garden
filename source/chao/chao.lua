@@ -11,6 +11,7 @@ local gfx <const> = pd.graphics
 -- Filename where Chao.data is saved
 local kDataFilename <const> = 'chao-data'
 -- Default names to pick from when generating blank chao data
+-- TODO: load this from file when needed instead?
 local kDefaultNames <const> = {
     'Ajax',
     'Atom',
@@ -101,7 +102,7 @@ local kDown <const>  = 'down'
 local kLeft <const>  = 'left'
 local kUp <const>    = 'up'
 local kRight <const> = 'right'
--- Actions Chao can perform at each index
+-- Walk/Idle: Actions Chao can perform at each index
 local kIdle <const>  = 'idle'
 local kLStep <const> = 'lStep'
 local kRStep <const> = 'rStep'
@@ -125,6 +126,7 @@ local kCollidesWithTags <const> = {
 -- --------------------------------------------------------------------------------
 local kIdleState <const> = 'idle'
 local kWalkingState <const> = 'walking'
+local kPettingState <const> = 'pet'
 
 -- --------------------------------------------------------------------------------
 -- Generic with common constructor and default props
@@ -135,6 +137,8 @@ class('ChaoState', {
     maxDuration = 7,
     -- States we can transition to from this state
     nextStateOptions = {},
+    -- Whether the Chao can be pet in this state
+    canPet = true,
 }).extends('State')
 
 function ChaoState:init(chao)
@@ -189,6 +193,8 @@ class('ChaoIdleState', {
 }).extends('ChaoState')
 
 function ChaoIdleState:enter()
+    -- Randomly sit or stand idle
+    -- TODO: make separate sitting state that extends ChaoIdleState?
     if math.random(0, 1) == 1 then
         self.chao:setImageFromSitSpritesheet()
     else
@@ -231,6 +237,33 @@ end
 
 function ChaoWalkingState:exit()
     self.chao:pauseWalkingAnimation()
+end
+
+-- --------------------------------------------------------------------------------
+-- Pet:
+-- - Set angle to 270
+-- - Play petting animation
+-- - Increase mood 
+-- - Transition to idle state once animation completes
+-- --------------------------------------------------------------------------------
+class('ChaoPettingState', {
+    -- Not that this should happen since the cursor is locked, but whatever:
+    canPet = false,
+}).extends('ChaoState')
+
+function ChaoPettingState:enter()
+    self.chao:setAngle(270)
+    -- TODO: unpause pet animation
+end
+
+function ChaoPettingState:update()
+    -- TODO: set image to petting animation frame
+    -- TODO: check if animation ends, transition to idle
+end
+
+function ChaoPettingState:exit()
+    -- TODO: if mood not max'd, +1
+    -- TODO: some way to communicate to cursor
 end
 
 -- ===============================================================================
@@ -287,6 +320,13 @@ function Chao:init(startX, startY)
         [kRight] = 3,
     }
     -- --------------------------------------------------------------------------------
+    -- Being Pet
+    -- --------------------------------------------------------------------------------
+    self.pettingSpritesheet = gfx.imagetable.new('images/chao/chao-pet')
+    -- Animation loop for petting.
+    self.pettingLoop = nil
+    self:initializePettingAnimation()
+    -- --------------------------------------------------------------------------------
     -- Default image 
     -- --------------------------------------------------------------------------------
     self.defaultImage = self:walkIdleSpritesheetImage(kDown, kIdle)
@@ -314,6 +354,7 @@ function Chao:init(startX, startY)
     self.states = {
         [kIdleState] = ChaoIdleState(self),
         [kWalkingState] = ChaoWalkingState(self),
+        [kPettingState] = ChaoPettingState(self),
     }
     self:setInitialState(kIdleState)
     -- When game starts, explicitly set duration of idle state to 3000 ms
@@ -475,6 +516,42 @@ function Chao:sitSpritesheetImage(dir)
     else
         return self:walkIdleSpritesheetImage(dir, kIdle)
     end
+end
+
+-- --------------------------------------------------------------------------------
+-- Pet Image Functions
+-- --------------------------------------------------------------------------------
+
+function Chao:initializePettingAnimation()
+    -- Insert upright frame in between leaning frames
+    -- TODO: repeat animation one more loop?
+    local pettingFrames = {
+        self.pettingSpritesheet[1],
+        self.pettingSpritesheet[2],
+        self.pettingSpritesheet[1],
+        self.pettingSpritesheet[3],
+    }
+    self.pettingLoop = gfx.animation.loop.new(500, pettingFrames, false)
+    self.pettingLoop.paused = true
+end
+
+function Chao:startPettingAnimation()
+    self.pettingLoop.frame = 1
+    self.pettingLoop.paused = false
+end
+
+-- TODO: is this necessary for non-looping?
+function Chao:pausePettingAnimation()
+    self.pettingLoop.paused = true
+end
+
+function Chao:hasPettingAnimationFinished()
+    -- For non-looping animations, isValid() returns false if it's passed the final frame
+    return not self.pettingLoop:isValid()
+end
+
+function Chao:setImageFromPettingAnimation()
+    self:setImage(self.pettingLoop:image())
 end
 
 -- --------------------------------------------------------------------------------

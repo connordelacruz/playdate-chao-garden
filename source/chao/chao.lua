@@ -330,9 +330,9 @@ function Chao:init(startX, startY)
     -- NOTE: Loop gets updated in setAngle() to account for facing direction.
     self.walkingLoop = nil
     self:initializeWalkingAnimation()
-    -- On frames 1 and 3 we want to play the step sound once. 
-    -- Keep track of next frame to play sound on.
-    self.stepSoundOnFrame = 1
+    -- Set to true when step sound has been played on frame 1.
+    -- Set to false again once animation has moved past frame 1.
+    self.stepSoundPlayed = false
     -- --------------------------------------------------------------------------------
     -- Sitting
     -- --------------------------------------------------------------------------------
@@ -382,8 +382,8 @@ function Chao:init(startX, startY)
         [kPettingState] = ChaoPettingState(self),
     }
     self:setInitialState(kIdleState)
-    -- When game starts, explicitly set duration of idle state to 3000 ms
-    self.state:setDuration(3000)
+    -- When game starts, explicitly set duration of idle state
+    self.state:setDuration(2000)
     -- ================================================================================
     -- Initialization
     -- ================================================================================
@@ -513,7 +513,7 @@ end
 
 -- Initialize self.walkingLoop.
 function Chao:initializeWalkingAnimation()
-    self.walkingLoop = gfx.animation.loop.new(500, self.walkIdleSpritesheet, true)
+    self.walkingLoop = gfx.animation.loop.new(300, self.walkIdleSpritesheet, true)
     -- Default to paused
     self.walkingLoop.paused = true
 end
@@ -545,13 +545,16 @@ function Chao:setImageFromWalkingAnimation()
     self:setImage(self.walkingLoop:image())
 end
 
--- Check if we're on a frame where step sound should be played.
--- If we are, play it and update target frame.
+-- If step sound hasn't been played on frame 1 this loop, play it.
 function Chao:handleStepSound()
-    if self.walkingLoop.frame == self.stepSoundOnFrame then
-        -- TODO: only play on frame one, boolean to track if we've played it this loop, update boolean when frame > 1
-        self.stepSoundOnFrame = (self.stepSoundOnFrame + 2) % 4
-        kSounds.step:play()
+    if self.walkingLoop.frame == 1 then
+        if not self.stepSoundPlayed then
+            self.stepSoundPlayed = true
+            kSounds.step:play()
+        end
+    else
+        -- Reset this after frame 1 so it plays next loop
+        self.stepSoundPlayed = false
     end
 end
 

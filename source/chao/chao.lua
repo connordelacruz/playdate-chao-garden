@@ -95,6 +95,13 @@ local kDefaultNames <const> = {
 }
 
 -- --------------------------------------------------------------------------------
+-- Sounds
+-- --------------------------------------------------------------------------------
+local kSounds <const> = {
+    step = pd.sound.sampleplayer.new('sounds/chao/step.wav')
+}
+
+-- --------------------------------------------------------------------------------
 -- Sprite/Action Stuff
 -- --------------------------------------------------------------------------------
 -- Directions Chao can face
@@ -233,7 +240,7 @@ function ChaoWalkingState:enter()
 end
 
 function ChaoWalkingState:update()
-    self.chao:setImageFromWalkingAnimation()
+    self.chao:takeStep()
     self.chao:handleMove()
     self:changeStateIfPastDuration()
 end
@@ -263,6 +270,7 @@ function ChaoPettingState:enter()
     self.chao:startPettingAnimation()
 end
 
+-- TODO: do this for a fixed duration
 function ChaoPettingState:update()
     self.chao:setImageFromPettingAnimation()
     if self.chao:hasPettingAnimationFinished() then
@@ -299,7 +307,7 @@ function Chao:init(startX, startY)
         self:saveData()
     end)
     -- ================================================================================
-    -- Spritesheets
+    -- Spritesheets/Animations + Sound Effects
     -- ================================================================================
     -- --------------------------------------------------------------------------------
     -- Walking/Standing
@@ -322,6 +330,9 @@ function Chao:init(startX, startY)
     -- NOTE: Loop gets updated in setAngle() to account for facing direction.
     self.walkingLoop = nil
     self:initializeWalkingAnimation()
+    -- On frames 1 and 3 we want to play the step sound once. 
+    -- Keep track of next frame to play sound on.
+    self.stepSoundOnFrame = 1
     -- --------------------------------------------------------------------------------
     -- Sitting
     -- --------------------------------------------------------------------------------
@@ -480,7 +491,7 @@ function Chao:boostMood()
 end
 
 -- --------------------------------------------------------------------------------
--- Walk/Idle Image Functions
+-- Walk/Idle Image + Sound Functions
 -- --------------------------------------------------------------------------------
 
 -- From the walking/idle spritesheet, set sprite's image based on specified action and calculated direction.
@@ -534,6 +545,22 @@ function Chao:setImageFromWalkingAnimation()
     self:setImage(self.walkingLoop:image())
 end
 
+-- Check if we're on a frame where step sound should be played.
+-- If we are, play it and update target frame.
+function Chao:handleStepSound()
+    if self.walkingLoop.frame == self.stepSoundOnFrame then
+        -- TODO: only play on frame one, boolean to track if we've played it this loop, update boolean when frame > 1
+        self.stepSoundOnFrame = (self.stepSoundOnFrame + 2) % 4
+        kSounds.step:play()
+    end
+end
+
+-- Update image from walking animation and handle step sound effect.
+function Chao:takeStep()
+    self:setImageFromWalkingAnimation()
+    self:handleStepSound()
+end
+
 -- --------------------------------------------------------------------------------
 -- Sit Image Functions
 -- --------------------------------------------------------------------------------
@@ -571,9 +598,11 @@ function Chao:initializePettingAnimation()
     self.pettingLoop.paused = true
 end
 
+-- TODO: keeps getting stuck in animation! Find a better way to do this cuz it's looping foreverrrr
 function Chao:startPettingAnimation()
     self.pettingLoop.frame = 1
     self.pettingLoop.paused = false
+    self.pettingLoop.shouldLoop = false
 end
 
 -- TODO: is this necessary for non-looping?
@@ -581,6 +610,7 @@ function Chao:pausePettingAnimation()
     self.pettingLoop.paused = true
 end
 
+-- TODO: this is INSANELY inconsistent
 function Chao:hasPettingAnimationFinished()
     -- For non-looping animations, isValid() returns false if it's passed the final frame
     return not self.pettingLoop:isValid()

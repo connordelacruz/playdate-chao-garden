@@ -98,7 +98,9 @@ local kDefaultNames <const> = {
 -- Sounds
 -- --------------------------------------------------------------------------------
 local kSounds <const> = {
-    step = pd.sound.sampleplayer.new('sounds/chao/step.wav')
+    step = pd.sound.sampleplayer.new('sounds/chao/step.wav'),
+    pet = pd.sound.sampleplayer.new('sounds/chao/pet.wav'),
+    boost = pd.sound.sampleplayer.new('sounds/chao/boost.wav'),
 }
 
 -- --------------------------------------------------------------------------------
@@ -267,12 +269,13 @@ class('ChaoPettingState', {
 
 function ChaoPettingState:enter()
     self.chao:setAngle(270)
-    self.chao:startPettingAnimation()
+    self.chao:pet()
 end
 
 -- TODO: do this for a fixed duration
 function ChaoPettingState:update()
     self.chao:setImageFromPettingAnimation()
+    -- TODO: use kSounds.pet:setFinishCallback() to handle this instead
     if self.chao:hasPettingAnimationFinished() then
         self.chao:setState(kIdleState)
     end
@@ -280,6 +283,7 @@ end
 
 function ChaoPettingState:exit()
     -- TODO: !!!! UPDATE STATUS PANEL !!!!
+    -- TODO: COOLDOWN!!! separate boost state with animation
     self.chao:boostMood()
     -- TODO: see if this is necessary
     self.chao:pausePettingAnimation()
@@ -585,7 +589,7 @@ function Chao:sitSpritesheetImage(dir)
 end
 
 -- --------------------------------------------------------------------------------
--- Pet Image Functions
+-- Pet Image + Sound Functions
 -- --------------------------------------------------------------------------------
 
 function Chao:initializePettingAnimation()
@@ -621,6 +625,16 @@ end
 
 function Chao:setImageFromPettingAnimation()
     self:setImage(self.pettingLoop:image())
+end
+
+function Chao:playPetSound()
+    kSounds.pet:play()
+end
+
+-- Start petting animation and play sound effect.
+function Chao:pet()
+    self:startPettingAnimation()
+    self:playPetSound()
 end
 
 -- --------------------------------------------------------------------------------

@@ -326,6 +326,10 @@ end
 -- ================================================================================
 class('EditNameClickTarget').extends(gfx.sprite)
 
+-- TODO: !!!!!!!!
+-- TODO: Freeze game when edit menu is open!!!!!! it lags otherwise
+-- TODO: !!!!!!!!
+
 function EditNameClickTarget:init(statusPanel, chao)
     EditNameClickTarget.super.init(self)
 

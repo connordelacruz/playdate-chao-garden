@@ -10,90 +10,6 @@ local gfx <const> = pd.graphics
 -- --------------------------------------------------------------------------------
 -- Filename where Chao.data is saved
 local kDataFilename <const> = 'chao-data'
--- Default names to pick from when generating blank chao data
--- TODO: load this from file when needed instead?
-local kDefaultNames <const> = {
-    'Ajax',
-    'Atom',
-    'Bingo',
-    'Brandy',
-    'Bruno',
-    'Bubbles',
-    'Buddy',
-    'Buzzy',
-    'Cash',
-    'Casino',
-    'Chacha',
-    'Chacky',
-    'Chaggy',
-    'Chai',
-    'Chalulu',
-    'Cham',
-    'Champ',
-    'Chang',
-    'Chaofun',
-    'Chaoko',
-    'Chaolin',
-    'Chaorro',
-    'Chaosky',
-    'Chap',
-    'Chapon',
-    'Chappy',
-    'Charon',
-    'Chasm',
-    'Chaz',
-    'Cheng',
-    'Choc',
-    'Cholly',
-    'Chucky',
-    'Cody',
-    'Cuckoo',
-    'DEJIME',
-    'Dash',
-    'Dingy',
-    'Dino',
-    'Dixie',
-    'Echo',
-    'Edge',
-    'Elvis',
-    'Emmy',
-    'Fuzzie',
-    'Groom',
-    'HITM',
-    'Hiya',
-    'Honey',
-    'Jojo',
-    'Keno',
-    'Kosmo',
-    'Loose',
-    'Melody',
-    'NAGOSHI',
-    'OVER',
-    'Papoose',
-    'Peaches',
-    'Pebbles',
-    'Pinky',
-    'Quartz',
-    'Quincy',
-    'ROSSO',
-    'Rascal',
-    'Rocky',
-    'Rover',
-    'Roxy',
-    'Rusty',
-    'SMILEB',
-    'SOUL',
-    'Spike',
-    'Star',
-    'Tango',
-    'Tiny',
-    'WOW',
-    'Woody',
-    'YS',
-    'Zack',
-    'Zippy',
-}
-
 -- --------------------------------------------------------------------------------
 -- Sounds
 -- --------------------------------------------------------------------------------
@@ -102,7 +18,6 @@ local kSounds <const> = {
     pet = pd.sound.sampleplayer.new('sounds/chao/pet.wav'),
     boost = pd.sound.sampleplayer.new('sounds/chao/boost.wav'),
 }
-
 -- --------------------------------------------------------------------------------
 -- Sprite/Action Stuff
 -- --------------------------------------------------------------------------------
@@ -115,10 +30,9 @@ local kRight <const> = 'right'
 local kIdle <const>  = 'idle'
 local kLStep <const> = 'lStep'
 local kRStep <const> = 'rStep'
-
--- ===============================================================================
+-- -------------------------------------------------------------------------------
 -- Collisions
--- ===============================================================================
+-- -------------------------------------------------------------------------------
 -- Tags that Chao should collide with
 local kCollidesWithTags <const> = {
     TAGS.SCREEN_BOUNDARY,
@@ -403,7 +317,7 @@ end
 function Chao:initData()
     self.data = {
         -- Pick random default name
-        name = kDefaultNames[math.random(1, #kDefaultNames)],
+        name = self:selectRandomDefaultName(),
         -- Start with 50% mood and belly
         mood = 50,
         belly = 50,
@@ -431,6 +345,11 @@ function Chao:initData()
             },
         },
     }
+end
+
+function Chao:selectRandomDefaultName()
+    local names <const> = json.decodeFile('chao/default-names.json')
+    return names[math.random(1, #names)]
 end
 
 function Chao:loadData()

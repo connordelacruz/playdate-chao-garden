@@ -186,20 +186,14 @@ function ChaoPettingState:enter()
     self.chao:pet()
 end
 
--- TODO: do this for a fixed duration
 function ChaoPettingState:update()
     self.chao:setImageFromPettingAnimation()
-    -- TODO: use kSounds.pet:setFinishCallback() to handle this instead
-    if self.chao:hasPettingAnimationFinished() then
-        self.chao:setState(kIdleState)
-    end
 end
 
 function ChaoPettingState:exit()
     -- TODO: !!!! UPDATE STATUS PANEL !!!!
     -- TODO: COOLDOWN!!! separate boost state with animation
     self.chao:boostMood()
-    -- TODO: see if this is necessary
     self.chao:pausePettingAnimation()
     if self.cursor ~= nil and self.cursor.className == 'Cursor' then
         self.cursor:enable()
@@ -519,31 +513,28 @@ function Chao:initializePettingAnimation()
         self.pettingSpritesheet[1],
         self.pettingSpritesheet[3],
     }
-    -- TODO: figure out duration
-    self.pettingLoop = gfx.animation.loop.new(500, pettingFrames, false)
+    self.pettingLoop = gfx.animation.loop.new(250, pettingFrames, true)
     self.pettingLoop.paused = true
 end
 
--- TODO: keeps getting stuck in animation! Find a better way to do this cuz it's looping foreverrrr
-function Chao:startPettingAnimation()
-    self.pettingLoop.frame = 1
+function Chao:playPettingAnimation()
     self.pettingLoop.paused = false
-    self.pettingLoop.shouldLoop = false
 end
 
--- TODO: is this necessary for non-looping?
 function Chao:pausePettingAnimation()
     self.pettingLoop.paused = true
 end
 
--- TODO: this is INSANELY inconsistent
-function Chao:hasPettingAnimationFinished()
-    -- For non-looping animations, isValid() returns false if it's passed the final frame
-    return not self.pettingLoop:isValid()
-end
-
 function Chao:setImageFromPettingAnimation()
     self:setImage(self.pettingLoop:image())
+end
+
+-- Set callback to switch Chao state when pet sound finishes.
+function Chao:setPetSoundFinishCallback()
+    -- TODO: transition to boost mood state if not in cooldown or at max mood; move boostMood() call to that new state
+    kSounds.pet:setFinishCallback(function ()
+        self:setState(kIdle)
+    end)
 end
 
 function Chao:playPetSound()
@@ -552,7 +543,9 @@ end
 
 -- Start petting animation and play sound effect.
 function Chao:pet()
-    self:startPettingAnimation()
+    self:playPettingAnimation()
+    -- TODO: do we need to set this every time??
+    self:setPetSoundFinishCallback()
     self:playPetSound()
 end
 

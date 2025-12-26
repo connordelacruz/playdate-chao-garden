@@ -41,6 +41,9 @@ function GardenScene:init()
     -- Boundary collisions
     self:createBoundaries()
 
+    -- Play garden theme
+    DJ:playGardenTheme()
+
     self:add()
 end
 

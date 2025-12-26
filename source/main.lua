@@ -14,6 +14,7 @@ import 'toyboxes'
 import 'globals'
 import 'util/debug'
 import 'util/data-manager'
+import 'util/music-manager'
 import 'util/state'
 import 'util/scene-manager'
 -- Game stuff
@@ -85,6 +86,11 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 -- Save/Load Data
 -- ===============================================================================
 DATA_MANAGER = DataManager()
+
+-- ===============================================================================
+-- Music
+-- ===============================================================================
+DJ = MusicManager()
 
 -- ===============================================================================
 -- Rings

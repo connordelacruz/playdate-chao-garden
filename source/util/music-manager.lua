@@ -113,10 +113,11 @@ function MusicManager:loadData()
     local loadedData = pd.datastore.read(kDataFilename)
     if loadedData == nil then
         DEBUG_MANAGER:vPrint('MusicManager: no save data found.')
+        self:togglePlayback(true)
     else
         DEBUG_MANAGER:vPrint('MusicManager: save data found. Play music setting = ' .. tostring(loadedData.playMusic))
+        self:togglePlayback(loadedData.playMusic)
     end
-    self:togglePlayback(loadedData.playMusic)
 end
 
 -- --------------------------------------------------------------------------------

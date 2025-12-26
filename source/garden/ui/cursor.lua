@@ -280,7 +280,9 @@ function Cursor:handsFree()
 end
 
 function Cursor:pet(chao)
-    -- TODO: move cursor to chao's head
+    -- Move to chao's head
+    -- TODO: figure out animating. Maybe cut sample to play once, then loop 3 times and use callbacks to move cursor?
+    self:moveWithCollisions(chao.x, chao.y - (chao.height / 4))
     self:setState(kPettingState)
 end
 

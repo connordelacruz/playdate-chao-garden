@@ -241,8 +241,9 @@ end
 -- ===============================================================================
 class('Chao').extends('FSMSprite')
 
-function Chao:init(startX, startY)
+function Chao:init(gardenScene, startX, startY)
     Chao.super.init(self)
+    self.scene = gardenScene
     -- ================================================================================
     -- Data and Stats
     -- ================================================================================
@@ -454,7 +455,8 @@ function Chao:setMood(val)
         val = 100
     end
     self.data.mood = val
-    -- TODO: update status panel!
+    -- Update status panel UI
+    self.scene.statusPanel:renderUI()
 end
 
 -- Boost mood by 10% (up to 100%) and play happy sound

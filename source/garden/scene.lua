@@ -23,7 +23,8 @@ function GardenScene:init()
     self.cursor = Cursor(SCREEN_WIDTH - 64, 64)
     -- Chao
     local gardenCenterX = 400 - (self.bg.width / 2)
-    self.chao = Chao(gardenCenterX, SCREEN_CENTER_Y)
+    self.chao = Chao(self, gardenCenterX, SCREEN_CENTER_Y)
+    -- TODO: move this to Chao:init() since it now can reference this scene?
     self.statusPanel:setChao(self.chao)
     -- Item Manager
     self.itemManager = ItemManager()

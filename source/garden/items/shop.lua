@@ -14,7 +14,6 @@ local text <const> = playout.text.new
 -- --------------------------------------------------------------------------------
 -- Sounds
 -- --------------------------------------------------------------------------------
--- TODO: may want to make this global since we'll prob reuse these sounds
 local kSounds <const> = {
     move = pd.sound.sampleplayer.new('sounds/ui/move.wav'),
     click = pd.sound.sampleplayer.new('sounds/ui/select.wav'),
@@ -23,7 +22,7 @@ local kSounds <const> = {
 }
 -- These samples are loud, so decrease volume of each
 for _,s in pairs(kSounds) do
-    s:setVolume(0.25)
+    s:setVolume(0.8)
 end
 
 -- --------------------------------------------------------------------------------

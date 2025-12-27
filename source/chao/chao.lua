@@ -39,6 +39,11 @@ local kCollidesWithTags <const> = {
     TAGS.GARDEN_BOUNDARY,
     TAGS.POND,
 }
+-- -------------------------------------------------------------------------------
+-- Mood
+-- -------------------------------------------------------------------------------
+-- Duration in seconds of mood cooldown (so you can't just spam petting)
+local kMoodBoostCooldown <const> = 10
 
 -- ===============================================================================
 -- Chao States
@@ -50,6 +55,7 @@ local kCollidesWithTags <const> = {
 local kIdleState <const> = 'idle'
 local kWalkingState <const> = 'walking'
 local kPettingState <const> = 'pet'
+local kMoodBoostState <const> = 'mood-boost'
 
 -- --------------------------------------------------------------------------------
 -- Generic with common constructor and default props
@@ -191,13 +197,43 @@ function ChaoPettingState:update()
 end
 
 function ChaoPettingState:exit()
-    -- TODO: !!!! UPDATE STATUS PANEL !!!!
-    -- TODO: COOLDOWN!!! separate boost state with animation
-    self.chao:boostMood()
     self.chao:pausePettingAnimation()
     if self.cursor ~= nil and self.cursor.className == 'Cursor' then
         self.cursor:enable()
     end
+end
+
+-- --------------------------------------------------------------------------------
+-- Mood Boost:
+-- - Play happy animation
+-- - Boost mood
+--
+-- NOTE:
+-- - Should transition to this from petting state, but only when not in cooldown
+-- --------------------------------------------------------------------------------
+class('ChaoMoodBoostState', {
+    canPet = false,
+    canEat = false,
+}).extends('ChaoState')
+
+function ChaoMoodBoostState:enter()
+    self.chao:setAngle(270)
+    self.chao:playHappyAnimation()
+    self.chao:boostMood()
+    self.timer = pd.timer.new(1000, function ()
+        self.chao:setState(kIdleState)
+    end)
+end
+
+function ChaoMoodBoostState:update()
+    self.chao:setImageFromHappyAnimation()
+end
+
+function ChaoMoodBoostState:exit()
+    if self.timer ~= nil then
+        self.timer:remove()
+    end
+    self.chao:pauseHappyAnimation()
 end
 
 -- ===============================================================================
@@ -264,6 +300,13 @@ function Chao:init(startX, startY)
     self.pettingLoop = nil
     self:initializePettingAnimation()
     -- --------------------------------------------------------------------------------
+    -- Happy/Mood Boost
+    -- --------------------------------------------------------------------------------
+    self.happySpritesheet = gfx.imagetable.new('images/chao/chao-happy')
+    -- Animation loop for happy chao.
+    self.happyLoop = nil
+    self:initializeHappyAnimation()
+    -- --------------------------------------------------------------------------------
     -- Default image 
     -- --------------------------------------------------------------------------------
     self.defaultImage = self:walkIdleSpritesheetImage(kDown, kIdle)
@@ -276,15 +319,27 @@ function Chao:init(startX, startY)
     -- ================================================================================
     -- Instance Variables
     -- ================================================================================
+    -- --------------------------------------------------------------------------------
+    -- Movement
+    -- --------------------------------------------------------------------------------
     -- Speed Chao moves at (px / sec)
-    -- TODO: increase based on run stat?
     self.speed = 20
+    -- --------------------------------------------------------------------------------
+    -- Angle
+    -- --------------------------------------------------------------------------------
     -- Angle the Chao is facing
     self.angle = nil
     -- Cardinal direction based on self.angle
     self.direction = nil
     -- Set default to these as 270 degrees (straight down)
     self:setAngle(270)
+    -- --------------------------------------------------------------------------------
+    -- Mood
+    -- --------------------------------------------------------------------------------
+    -- Timestamp of last mood boost from petting. Used for cooldown calculation.
+    -- Default to negative of cooldown so first pet is always a boost.
+    self.lastMoodBoostTimestamp = kMoodBoostCooldown * -1000
+    -- TODO: decrease mood over time
     -- ================================================================================
     -- State
     -- ================================================================================
@@ -292,6 +347,7 @@ function Chao:init(startX, startY)
         [kIdleState] = ChaoIdleState(self),
         [kWalkingState] = ChaoWalkingState(self),
         [kPettingState] = ChaoPettingState(self),
+        [kMoodBoostState] = ChaoMoodBoostState(self),
     }
     self:setInitialState(kIdleState)
     -- When game starts, explicitly set duration of idle state
@@ -398,14 +454,32 @@ function Chao:setMood(val)
         val = 100
     end
     self.data.mood = val
+    -- TODO: update status panel!
 end
 
--- Boost mood by 10% (up to 100%)
+-- Boost mood by 10% (up to 100%) and play happy sound
 function Chao:boostMood()
     if self.data.mood < 100 then
         self:setMood(self.data.mood + 10)
+        -- Update timestamp for cooldown calculations
+        self.lastMoodBoostTimestamp = pd.getCurrentTimeMilliseconds()
+        -- Sound cue
+        self:playHappySound()
     end
 end
+
+-- Returns true if mood boost cooldown is done, false otherwise.
+function Chao:isMoodBoostCooldownComplete()
+    local timeDiff = pd.getCurrentTimeMilliseconds() - self.lastMoodBoostTimestamp
+    return timeDiff >= kMoodBoostCooldown * 1000
+end
+
+-- Returns true if mood boost cooldown is complete and current mood is > 100.
+function Chao:canBoostMood()
+    return self.data.mood < 100 and self:isMoodBoostCooldownComplete()
+end
+
+-- TODO: mood drain logic
 
 -- --------------------------------------------------------------------------------
 -- Walk/Idle Image + Sound Functions
@@ -531,9 +605,15 @@ end
 
 -- Set callback to switch Chao state when pet sound finishes.
 function Chao:setPetSoundFinishCallback()
-    -- TODO: transition to boost mood state if not in cooldown or at max mood; move boostMood() call to that new state
     kSounds.pet:setFinishCallback(function ()
-        self:setState(kIdle)
+        -- TODO: always reset mood drain timer; maybe always reset mood boost cooldown too??
+        if self:canBoostMood() then
+            DEBUG_MANAGER:vPrint('Chao: Boosting mood')
+            self:setState(kMoodBoostState)
+        else
+            DEBUG_MANAGER:vPrint('Chao: Mood cannot be boosted')
+            self:setState(kIdleState)
+        end
     end)
 end
 
@@ -547,6 +627,31 @@ function Chao:pet()
     -- TODO: do we need to set this every time??
     self:setPetSoundFinishCallback()
     self:playPetSound()
+end
+
+-- --------------------------------------------------------------------------------
+-- Happy Chao Image + Sound Functions
+-- --------------------------------------------------------------------------------
+
+function Chao:initializeHappyAnimation()
+    self.happyLoop = gfx.animation.loop.new(250, self.happySpritesheet, true)
+    self.happyLoop.paused = true
+end
+
+function Chao:playHappyAnimation()
+    self.happyLoop.paused = false
+end
+
+function Chao:pauseHappyAnimation()
+    self.happyLoop.paused = true
+end
+
+function Chao:setImageFromHappyAnimation()
+    self:setImage(self.happyLoop:image())
+end
+
+function Chao:playHappySound()
+    kSounds.boost:play()
 end
 
 -- --------------------------------------------------------------------------------

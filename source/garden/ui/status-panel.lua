@@ -86,11 +86,10 @@ function StatusPanel:init(panelWidth)
     -- --------------------------------------------------------------------------------
     -- To be set after initialization
     self.chao = nil
-    -- RING_MASTER should have initialized by now, pull initial ring data
-    self.rings = RING_MASTER.rings
     -- Register listener for when ring value updates
-    RING_MASTER:registerRingListener('status-panel', function (rings)
-        self:setRings(RING_MASTER.rings)
+    RING_MASTER:registerRingListener('status-panel', function ()
+        self:updateRings()
+        self:updateUI()
     end)
     -- TODO: removeRingListener() on StatusPanel:remove() !!!!!
 
@@ -99,7 +98,7 @@ function StatusPanel:init(panelWidth)
     -- --------------------------------------------------------------------------------
     self.panelWidth = panelWidth
     -- Setup Playout elements for UI
-    self:renderUI()
+    self:initializeUI()
     -- Draw from top left corner
     self:setCenter(0, 0)
     -- Left side of the screen
@@ -120,28 +119,28 @@ end
 -- Setters
 -- --------------------------------------------------------------------------------
 
+-- TODO: reorganize/move this?
 function StatusPanel:setChao(chao)
     self.chao = chao
-    self:renderUI()
-end
-
-function StatusPanel:setRings(rings)
-    self.rings = rings
-    self:renderUI()
+    self:updateChaoName()
+    self:createOrUpdateEditNameClickTarget()
+    -- TODO: update mood, belly, stats
+    self:updateUI()
 end
 
 -- --------------------------------------------------------------------------------
--- Render UI
+-- Top Level UI
 -- --------------------------------------------------------------------------------
 
-function StatusPanel:renderUI()
+-- Initialize UI tree and set image.
+function StatusPanel:initializeUI()
     self.panelUI = playout.tree.new(self:createPanelUI())
     local panelImage = self.panelUI:draw()
     self:setImage(panelImage)
-    self:createEditNameClickTarget()
+    self:createOrUpdateEditNameClickTarget()
 end
 
--- Build Menu UI
+-- Build Menu UI tree.
 function StatusPanel:createPanelUI()
     local outerPanelBoxProps = {
         id = 'status-panel-root',
@@ -149,17 +148,39 @@ function StatusPanel:createPanelUI()
         width = self.panelWidth,
     }
 
+    -- TODO: may not be necessary
+    self.sectionNodes = {
+        name = self:createNameUI(),
+        mood = self:createMoodUI(),
+        belly = self:createBellyUI(),
+        stats = self:createStatsUI(),
+        rings = self:createRingCountUI(),
+    }
+
     return box(outerPanelBoxProps, {
-        self:createNameUI(),
-        self:createMoodBellyUI(),
-        self:createStatsUI(),
-        self:createRingCountUI(),
+        self.sectionNodes.name,
+        self.sectionNodes.mood,
+        self.sectionNodes.belly,
+        self.sectionNodes.stats,
+        self.sectionNodes.rings,
     })
 end
 
+-- Update UI. Call after making changes to specific UI properties.
+function StatusPanel:updateUI()
+    self.panelUI:layout()
+    self.panelUI:draw()
+end
+
+-- --------------------------------------------------------------------------------
+-- Name UI + Edit Click Target
+-- --------------------------------------------------------------------------------
+
+-- Returns UI node for name section.
+-- Sets self.nameTextNode.
 function StatusPanel:createNameUI()
     local name = self.chao == nil and '' or self.chao.data.name
-    local nameText = text(name, {
+    self.nameTextNode = text(name, {
         id = 'name-text',
         style = kNameTextStyle,
     })
@@ -169,27 +190,58 @@ function StatusPanel:createNameUI()
             minWidth = 66,
         },
         {
-            nameText,
+            self.nameTextNode,
         }
     )
 end
 
--- Mood/Belly sections
-function StatusPanel:createMoodBellyUI()
+-- Update Chao name to match self.chao.
+function StatusPanel:updateChaoName()
+    local name = self.chao == nil and '' or self.chao.data.name
+    self.nameTextNode.text = name
+    -- Update edit click target rect to match new name size.
+    self:createOrUpdateEditNameClickTarget()
+end
+
+-- Create/update edit name click target.
+-- TODO: figure out where this is used and see if we can clean this up?
+function StatusPanel:createOrUpdateEditNameClickTarget()
+    if self.panelUI == nil then
+        return
+    end
+    if self.editNameClickTarget == nil then
+        self.editNameClickTarget = EditNameClickTarget(self, self.chao)
+    else
+        self.editNameClickTarget.chao = self.chao
+        self.editNameClickTarget:updateRect()
+    end
+end
+
+-- --------------------------------------------------------------------------------
+-- Mood UI
+-- --------------------------------------------------------------------------------
+
+-- Returns UI node for mood section.
+-- TODO: set a reference to bars section or whatever so we can update
+function StatusPanel:createMoodUI()
     local mood = self.chao == nil and 0 or self.chao.data.mood
-    local belly = self.chao == nil and 0 or self.chao.data.belly
-
-    local moodUI = self:createBarUI('Mood', mood, nil)
-    local bellyUI = self:createBarUI('Belly', belly, nil)
-
-    return box(
-        {},
-        {
-            moodUI,
-            bellyUI,
-        }
-    )
+    return self:createBarUI('Mood', mood, nil)
 end
+
+-- --------------------------------------------------------------------------------
+-- Belly UI
+-- --------------------------------------------------------------------------------
+
+-- Returns UI node for belly section.
+-- TODO: set a reference to bars section or whatever so we can update
+function StatusPanel:createBellyUI()
+    local belly = self.chao == nil and 0 or self.chao.data.belly
+    return self:createBarUI('Belly', belly, nil)
+end
+
+-- --------------------------------------------------------------------------------
+-- Stats UI
+-- --------------------------------------------------------------------------------
 
 -- All stats sections
 function StatusPanel:createStatsUI()
@@ -214,6 +266,7 @@ function StatusPanel:createStatsUI()
         statsUIChildren[#statsUIChildren+1] = statUI
     end
 
+    -- TODO: JUST RETURN statsUIChildren unpacked?
     return box(
         {},
         statsUIChildren
@@ -226,6 +279,13 @@ function StatusPanel:createStatUI(statName, statData)
     local level = statData == nil and 0 or statData.level
     return self:createBarUI(statName, progress, level)
 end
+
+-- --------------------------------------------------------------------------------
+-- Bar UI (mood, belly, stats sections)
+-- --------------------------------------------------------------------------------
+
+-- TODO: figure out how we can keep track of and update progress bar and level
+-- TODO: maybe return container, levelTextNode, progressBarContainer separately?
 
 -- Create a bar UI section (mood/belly + stats)
 function StatusPanel:createBarUI(title, progress, level)
@@ -287,10 +347,16 @@ function StatusPanel:createProgressBar(progress)
         progressBarChildren)
 end
 
+-- --------------------------------------------------------------------------------
+-- Rings UI
+-- --------------------------------------------------------------------------------
+
+-- Returns UI node for rings section.
+-- Sets self.ringsTextNode.
 function StatusPanel:createRingCountUI()
     -- TODO: add sprite n shit, polish up, move styles to constants
-    local ringText = text(
-        'Rings: ' .. self.rings,
+    self.ringsTextNode = text(
+        'Rings: ' .. RING_MASTER.rings,
         {
             fontFamily = kFonts.level,
             alignment = kTextAlignment.center,
@@ -303,22 +369,13 @@ function StatusPanel:createRingCountUI()
             paddingTop = 3,
         },
         {
-            ringText,
+            self.ringsTextNode,
         })
 end
 
--- TODO: move to below section, add subsections to separate this from class definitions
--- Create/update edit name click target
-function StatusPanel:createEditNameClickTarget()
-    if self.panelUI == nil then
-        return
-    end
-    if self.editNameClickTarget == nil then
-        self.editNameClickTarget = EditNameClickTarget(self, self.chao)
-    else
-        self.editNameClickTarget.chao = self.chao
-        self.editNameClickTarget:updateRect()
-    end
+-- Update ring count to match RING_MASTER.rings.
+function StatusPanel:updateRings()
+    self.ringsTextNode.text = 'Rings: ' .. RING_MASTER.rings
 end
 
 -- ================================================================================
@@ -394,7 +451,8 @@ function EditNameClickTarget:click(cursor)
         -- Update Chao name data
         self.chao:setName(pd.keyboard.text)
         -- Redraw panel UI
-        self.statusPanel:renderUI()
+        self.statusPanel:updateChaoName()
+        self.statusPanel:updateUI()
         -- Re-enable cursor
         cursor:enable()
     end
@@ -479,5 +537,6 @@ end
 
 function EditNameTextInput:updateText(newText)
     self.text = newText
+    -- TODO: just update tree
     self:renderUI()
 end

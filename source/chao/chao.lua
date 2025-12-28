@@ -456,7 +456,8 @@ function Chao:setMood(val)
     end
     self.data.mood = val
     -- Update status panel UI
-    self.scene.statusPanel:renderUI()
+    -- TODO: need to call updateMood() or something
+    self.scene.statusPanel:updateUI()
 end
 
 -- Boost mood by 10% (up to 100%) and play happy sound

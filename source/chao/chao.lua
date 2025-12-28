@@ -45,9 +45,9 @@ local kCollidesWithTags <const> = {
 -- Duration in seconds of mood cooldown (so you can't just spam petting)
 local kMoodBoostCooldown <const> = 10
 -- Duration in seconds of mood drain timer
--- TODO: Once fruits and minigames are implemented, decide if this is too long
+-- TODO: Once fruits and minigames are implemented, decide if this is too short/long
 -- TODO: Once weeds are implemented, maybe decrease duration proportionally to weeds?
-local kMoodDrainTimerDuration <const> = 60
+local kMoodDrainTimerDuration <const> = 45
 
 -- ===============================================================================
 -- Chao States
@@ -371,6 +371,10 @@ function Chao:init(gardenScene, startX, startY)
     self:add()
 end
 
+-- ================================================================================
+-- Chao Data
+-- ================================================================================
+
 -- --------------------------------------------------------------------------------
 -- Save/Load/Initialize Data
 -- --------------------------------------------------------------------------------
@@ -452,91 +456,101 @@ function Chao:setName(newName)
     self.data.name = newName
 end
 
+-- ================================================================================
+-- Angle, Collisions, Walking, and Idling
+-- ================================================================================
+
 -- --------------------------------------------------------------------------------
--- Mood Functions
+-- Angle/Direction
 -- --------------------------------------------------------------------------------
 
--- Set mood value. Ensures value is between 0 and 100.
-function Chao:setMood(val)
-    if val < 0 then
-        val = 0
-    elseif val > 100 then
-        val = 100
+-- Set angle and calculate cardinal direction.
+function Chao:setAngle(angle)
+    self.angle = angle % 360
+    self.direction = self:angleToDirection()
+    -- Update walking animation loop start/end frames
+    self:updateWalkingAnimation()
+end
+
+-- Returns a cardinal direction constant based on self.angle.
+function Chao:angleToDirection()
+    local direction = kRight
+    if self.angle >= 45 and self.angle < 135 then
+        direction = kUp
+    elseif self.angle >= 135 and self.angle < 225 then
+        direction = kLeft
+    elseif self.angle >= 225 and self.angle < 315 then
+        direction = kDown
     end
-    self.data.mood = val
-    -- Update status panel UI
-    self.scene.statusPanel:updateMood()
-    self.scene.statusPanel:updateUI()
+    return direction
 end
 
--- Update timestamp of last time mood was boosted.
--- (Also resets when Chao is pet to prevent spamming).
-function Chao:updateLastMoodBoostTimestamp()
-    self.lastMoodBoostTimestamp = pd.getCurrentTimeMilliseconds()
+-- Set a random angle.
+function Chao:randomizeAngle()
+    self:setAngle(math.random(0, 360))
 end
 
--- Boost mood by 10% (up to 100%) and play happy sound
-function Chao:boostMood()
-    if self.data.mood < 100 then
-        self:setMood(self.data.mood + 10)
-        -- Update timestamp for cooldown calculations
-        self:updateLastMoodBoostTimestamp()
-        -- Sound cue
-        self:playHappySound()
+-- Flip angle's x direction (e.g. "bounce" off vertical boundary)
+function Chao:flipXDirection()
+    self:setAngle(180 - self.angle)
+end
+
+-- Flip angle's y direction (e.g. "bounce" off horizontal boundary)
+function Chao:flipYDirection()
+    self:setAngle(360 - self.angle)
+end
+
+-- --------------------------------------------------------------------------------
+-- Collision
+-- --------------------------------------------------------------------------------
+
+function Chao:shouldCollideWithTag(tag)
+    for i=1,#kCollidesWithTags do
+        local collidesWithTag = kCollidesWithTags[i]
+        if collidesWithTag == tag then
+            return true
+        end
     end
+    return false
 end
 
--- Drain mood by 10%.
-function Chao:drainMood()
-    if self.data.mood > 0 then
-        self:setMood(self.data.mood - 10)
+function Chao:collisionResponse(other)
+    -- Overlap by default
+    local collideType = gfx.sprite.kCollisionTypeOverlap
+    if self:shouldCollideWithTag(other:getTag()) then
+        collideType = gfx.sprite.kCollisionTypeFreeze
     end
+    return collideType
 end
 
--- Returns true if mood boost cooldown is done, false otherwise.
-function Chao:isMoodBoostCooldownComplete()
-    local timeDiff = pd.getCurrentTimeMilliseconds() - self.lastMoodBoostTimestamp
-    return timeDiff >= kMoodBoostCooldown * 1000
+-- --------------------------------------------------------------------------------
+-- Movement
+-- --------------------------------------------------------------------------------
+
+-- Returns target x,y coordinates calculated based on angle and speed.
+function Chao:getTargetCoordinates()
+    local rad = math.rad(self.angle)
+    local targetX = self.x + self.speed * math.cos(rad) * DELTA_TIME
+    local targetY = self.y + self.speed * -math.sin(rad) * DELTA_TIME
+    return targetX, targetY
 end
 
--- Returns true if mood boost cooldown is complete and current mood is > 100.
-function Chao:canBoostMood()
-    return self.data.mood < 100 and self:isMoodBoostCooldownComplete()
-end
-
--- Initialize mood drain timer.
-function Chao:initializeMoodDrainTimer()
-    self.moodDrainTimer = pd.timer.new(kMoodDrainTimerDuration * 1000, function ()
-        DEBUG_MANAGER:vPrint('Chao: Mood drain timer ended, draining mood and restarting timer.')
-        -- Drain mood
-        self:drainMood()
-        -- Restart timer
-        self:restartMoodDrainTimer()
-    end)
-    self.moodDrainTimer.repeats = true
-end
-
-function Chao:pauseMoodDrainTimer()
-    DEBUG_MANAGER:vPrint('Chao: Pausing mood drain timer.')
-    self.moodDrainTimer:pause()
-end
-
-function Chao:playMoodDrainTimer()
-    DEBUG_MANAGER:vPrint('Chao: Starting mood drain timer.')
-    self.moodDrainTimer:start()
-end
-
-function Chao:restartMoodDrainTimer()
-    DEBUG_MANAGER:vPrint('Chao: Restarting mood drain timer.')
-    self.moodDrainTimer:reset()
-    self.moodDrainTimer:start()
-end
-
--- NOTE: Not sure if this will ever get used, but might as well add it for completeness.
--- If this does get implemented, make sure to add nil checks to above functions.
-function Chao:removeMoodDrainTimer()
-    DEBUG_MANAGER:vPrint('Chao: Removing mood drain timer.')
-    self.moodDrainTimer:remove()
+-- Move walking Chao. Handles wall collisions.
+-- Called on update() in walking state
+function Chao:handleMove()
+    local targetX, targetY = self:getTargetCoordinates()
+    local _, _, collisions, _ = self:moveWithCollisions(targetX, targetY)
+    for i=1, #collisions do
+        local collision = collisions[i]
+        if collision.type ~= gfx.sprite.kCollisionTypeOverlap then
+            if collision.normal.x ~= 0 then
+                self:flipXDirection()
+            end
+            if collision.normal.y ~= 0 then
+                self:flipYDirection()
+            end
+        end
+    end
 end
 
 -- --------------------------------------------------------------------------------
@@ -633,8 +647,99 @@ function Chao:sitSpritesheetImage(dir)
     end
 end
 
+-- ================================================================================
+-- Mood Mechanics, Petting, and Boosting
+-- ================================================================================
+
 -- --------------------------------------------------------------------------------
--- Pet Image + Sound Functions
+-- Mood Functions
+-- --------------------------------------------------------------------------------
+
+-- Set mood value. Ensures value is between 0 and 100.
+function Chao:setMood(val)
+    if val < 0 then
+        val = 0
+    elseif val > 100 then
+        val = 100
+    end
+    self.data.mood = val
+    -- Update status panel UI
+    self.scene.statusPanel:updateMood()
+    self.scene.statusPanel:updateUI()
+end
+
+-- Update timestamp of last time mood was boosted.
+-- (Also resets when Chao is pet to prevent spamming).
+function Chao:updateLastMoodBoostTimestamp()
+    self.lastMoodBoostTimestamp = pd.getCurrentTimeMilliseconds()
+end
+
+-- Boost mood by 10% (up to 100%) and play happy sound
+function Chao:boostMood()
+    if self.data.mood < 100 then
+        self:setMood(self.data.mood + 10)
+        -- Update timestamp for cooldown calculations
+        self:updateLastMoodBoostTimestamp()
+        -- Sound cue
+        self:playHappySound()
+    end
+end
+
+-- Drain mood by 10%.
+function Chao:drainMood()
+    if self.data.mood > 0 then
+        self:setMood(self.data.mood - 10)
+    end
+end
+
+-- Returns true if mood boost cooldown is done, false otherwise.
+function Chao:isMoodBoostCooldownComplete()
+    local timeDiff = pd.getCurrentTimeMilliseconds() - self.lastMoodBoostTimestamp
+    return timeDiff >= kMoodBoostCooldown * 1000
+end
+
+-- Returns true if mood boost cooldown is complete and current mood is > 100.
+function Chao:canBoostMood()
+    return self.data.mood < 100 and self:isMoodBoostCooldownComplete()
+end
+
+-- Initialize mood drain timer.
+function Chao:initializeMoodDrainTimer()
+    self.moodDrainTimer = pd.timer.new(kMoodDrainTimerDuration * 1000, function ()
+        DEBUG_MANAGER:vPrint('Chao: Mood drain timer ended, draining mood and restarting timer.')
+        -- Drain mood
+        self:drainMood()
+        -- Restart timer
+        self:restartMoodDrainTimer()
+    end)
+    self.moodDrainTimer.repeats = true
+end
+
+function Chao:pauseMoodDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Pausing mood drain timer.')
+    self.moodDrainTimer:pause()
+end
+
+function Chao:playMoodDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Starting mood drain timer.')
+    self.moodDrainTimer:start()
+end
+
+function Chao:restartMoodDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Restarting mood drain timer.')
+    self.moodDrainTimer:reset()
+    self.moodDrainTimer:start()
+end
+
+-- NOTE: Not sure if this will ever get used, but might as well add it for completeness.
+-- If this does get implemented, make sure to add nil checks to above functions.
+function Chao:removeMoodDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Removing mood drain timer.')
+    self.moodDrainTimer:remove()
+end
+
+-- --------------------------------------------------------------------------------
+-- Pet Animations + Sound Functions
 -- --------------------------------------------------------------------------------
 
 function Chao:initializePettingAnimation()
@@ -689,7 +794,21 @@ function Chao:pet()
 end
 
 -- --------------------------------------------------------------------------------
--- Happy Chao Image + Sound Functions
+-- Cursor Click
+-- --------------------------------------------------------------------------------
+
+function Chao:click(cursor)
+    if self.state.canPet then
+        self:setState(kPettingState)
+        -- Pass reference to cursor for syncing animation
+        self.state.cursor = cursor
+        -- Set cursor state to petting
+        cursor:pet(self)
+    end
+end
+
+-- --------------------------------------------------------------------------------
+-- Happy Chao Animation + Sound Functions
 -- --------------------------------------------------------------------------------
 
 function Chao:initializeHappyAnimation()
@@ -711,112 +830,4 @@ end
 
 function Chao:playHappySound()
     kSounds.boost:play()
-end
-
--- --------------------------------------------------------------------------------
--- Angle/Direction
--- --------------------------------------------------------------------------------
-
--- Set angle and calculate cardinal direction.
-function Chao:setAngle(angle)
-    self.angle = angle % 360
-    self.direction = self:angleToDirection()
-    -- Update walking animation loop start/end frames
-    self:updateWalkingAnimation()
-end
-
--- Returns a cardinal direction constant based on self.angle.
-function Chao:angleToDirection()
-    local direction = kRight
-    if self.angle >= 45 and self.angle < 135 then
-        direction = kUp
-    elseif self.angle >= 135 and self.angle < 225 then
-        direction = kLeft
-    elseif self.angle >= 225 and self.angle < 315 then
-        direction = kDown
-    end
-    return direction
-end
-
--- Set a random angle.
-function Chao:randomizeAngle()
-    self:setAngle(math.random(0, 360))
-end
-
--- Flip angle's x direction (e.g. "bounce" off vertical boundary)
-function Chao:flipXDirection()
-    self:setAngle(180 - self.angle)
-end
-
--- Flip angle's y direction (e.g. "bounce" off horizontal boundary)
-function Chao:flipYDirection()
-    self:setAngle(360 - self.angle)
-end
-
--- --------------------------------------------------------------------------------
--- Collision
--- --------------------------------------------------------------------------------
-
-function Chao:shouldCollideWithTag(tag)
-    for i=1,#kCollidesWithTags do
-        local collidesWithTag = kCollidesWithTags[i]
-        if collidesWithTag == tag then
-            return true
-        end
-    end
-    return false
-end
-
-function Chao:collisionResponse(other)
-    -- Overlap by default
-    local collideType = gfx.sprite.kCollisionTypeOverlap
-    if self:shouldCollideWithTag(other:getTag()) then
-        collideType = gfx.sprite.kCollisionTypeFreeze
-    end
-    return collideType
-end
-
--- --------------------------------------------------------------------------------
--- Movement
--- --------------------------------------------------------------------------------
-
--- Returns target x,y coordinates calculated based on angle and speed.
-function Chao:getTargetCoordinates()
-    local rad = math.rad(self.angle)
-    local targetX = self.x + self.speed * math.cos(rad) * DELTA_TIME
-    local targetY = self.y + self.speed * -math.sin(rad) * DELTA_TIME
-    return targetX, targetY
-end
-
--- Move walking Chao. Handles wall collisions.
--- Called on update() in walking state
-function Chao:handleMove()
-    local targetX, targetY = self:getTargetCoordinates()
-    local _, _, collisions, _ = self:moveWithCollisions(targetX, targetY)
-    for i=1, #collisions do
-        local collision = collisions[i]
-        if collision.type ~= gfx.sprite.kCollisionTypeOverlap then
-            if collision.normal.x ~= 0 then
-                self:flipXDirection()
-            end
-            if collision.normal.y ~= 0 then
-                self:flipYDirection()
-            end
-        end
-    end
-end
-
--- --------------------------------------------------------------------------------
--- Cursor Interactions
--- --------------------------------------------------------------------------------
-
-function Chao:click(cursor)
-    -- TODO: Check if cursor is holding food?
-    if self.state.canPet then
-        self:setState(kPettingState)
-        -- Pass reference to cursor for syncing animation
-        self.state.cursor = cursor
-        -- Set cursor state to petting
-        cursor:pet(self)
-    end
 end

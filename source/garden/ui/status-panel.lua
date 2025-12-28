@@ -137,7 +137,7 @@ end
 -- Initialize UI tree and set image.
 function StatusPanel:initializeUI()
     -- Initialize images to use for progress bars
-    self:initializeProgressChunkImages()
+    self:initializeProgressBarImages()
     -- Build and render UI.
     self.panelUI = playout.tree.new(self:createPanelUI())
     local panelImage = self.panelUI:draw()
@@ -288,7 +288,6 @@ function StatusPanel:createStatsUI()
         local statIndex = kStatIndexesInOrder[i]
         local statData = stats[statIndex]
         local title = statIndex:gsub("^%l", string.upper)
-        -- TODO: have this return all 3 vals, add a dict to store these in to reference later
         local statUI, statProgressBar, statLevelText = self:createStatUI(title, statData)
         -- Append node to children
         statsUIChildren[#statsUIChildren+1] = statUI
@@ -336,7 +335,7 @@ end
 -- Create a bar UI section with optional level text.
 -- Returns 3 values:
 --  1. The entire bar section UI container node
---  2. The progress bar container node
+--  2. The progress bar image node
 --  3. The level text node
 function StatusPanel:createBarUI(title, progress, level)
     -- Title and optional LV display
@@ -363,7 +362,7 @@ function StatusPanel:createBarUI(title, progress, level)
         }
     )
     -- Progress bar
-    local progressBarContainer = self:createProgressBar(progress)
+    local progressBarImage = image(self:getProgressBarImage(progress))
 
     -- Top level container
     local barSectionContainer = box({
@@ -371,62 +370,65 @@ function StatusPanel:createBarUI(title, progress, level)
         },
         {
             titleContainer,
-            progressBarContainer,
+            progressBarImage,
         }
     )
 
-    return barSectionContainer, progressBarContainer, levelText
+    return barSectionContainer, progressBarImage, levelText
 end
 
--- Create a progress bar box.
-function StatusPanel:createProgressBar(progress)
-    -- Convert progress percent to rounded down int
-    local progressInt = progress // 10
-    -- Create little progress boxes
-    local progressBarChildren = {}
-    for i=1,10 do
-        local filled = i <= progressInt
-        local progressChunkImage = image(
-            filled and self.progressChunkFilled or self.progressChunkEmpty
-        )
-        progressBarChildren[i] = progressChunkImage
-    end
-
-    return box({
-            style = kProgressBarContainerStyle,
-        },
-        progressBarChildren)
-end
-
--- Initialize images for progress bar chunks.
+-- Initialize images for progress bar chunks. Must be called before accessing self.progressBarImages.
 -- NOTE: relies on self.panelWidth for sizing.
-function StatusPanel:initializeProgressChunkImages()
+function StatusPanel:initializeProgressBarImages()
     -- Calculate full bar width (panel size - padding)
     local fullBarWidth <const> = self.panelWidth - (STYLE_ROOT_PANEL.paddingLeft + STYLE_ROOT_PANEL.paddingRight)
     -- Progress chunk width is 1/10 of the full bar
     local progressChunkWidth <const> = fullBarWidth // 10
     -- Initialize filled and empty progress bar chunk images
-    self.progressChunkEmpty = gfx.image.new(progressChunkWidth, kProgressBarChunkStyle.height)
-    gfx.pushContext(self.progressChunkEmpty)
+    local progressChunkEmpty = gfx.image.new(progressChunkWidth, kProgressBarChunkStyle.height)
+    gfx.pushContext(progressChunkEmpty)
         gfx.setStrokeLocation(gfx.kStrokeInside)
         gfx.setLineWidth(kProgressBarChunkStyle.border)
         gfx.drawRoundRect(0, 0, progressChunkWidth, kProgressBarChunkStyle.height, kProgressBarChunkStyle.borderRadius)
     gfx.popContext()
-    self.progressChunkFilled = gfx.image.new(progressChunkWidth, kProgressBarChunkStyle.height)
-    gfx.pushContext(self.progressChunkFilled)
+    local progressChunkFilled = gfx.image.new(progressChunkWidth, kProgressBarChunkStyle.height)
+    gfx.pushContext(progressChunkFilled)
         gfx.setStrokeLocation(gfx.kStrokeInside)
         gfx.fillRoundRect(0, 0, progressChunkWidth, kProgressBarChunkStyle.height, kProgressBarChunkStyle.borderRadius)
     gfx.popContext()
+    -- Generate pre-calculated images for progress bars.
+    -- (And yeah we're indexing from 0 cuz it makes sense here, bite me Lua).
+    self.progressBarImages = {}
+    for i=0,10 do
+        local progressBarImage = gfx.image.new(fullBarWidth, kProgressBarChunkStyle.height)
+        gfx.pushContext(progressBarImage)
+            for chunk=1,10 do
+                local chunkImage = chunk <= i and progressChunkFilled or progressChunkEmpty
+                local x = (chunk - 1) * progressChunkWidth
+                chunkImage:draw(x, 0)
+            end
+        gfx.popContext()
+        self.progressBarImages[i] = progressBarImage
+    end
 end
 
--- Takes a progress bar box created by the above function and updates it based on the progress parameter.
-function StatusPanel:updateProgressBar(progressBarContainer, progress)
+-- Returns an image for a progress bar representing the specified progress percent.
+function StatusPanel:getProgressBarImage(progress)
     local progressInt = progress // 10
-    for i=1,#progressBarContainer.children do
-        local progressChunkImage = progressBarContainer.children[i]
-        local filled = i <= progressInt
-        progressChunkImage.img = filled and self.progressChunkFilled or self.progressChunkEmpty
+    -- Validate
+    if progressInt < 0 then
+        progressInt = 0
+    elseif progressInt > 10 then
+        progressInt = 10
     end
+    
+    return self.progressBarImages[progressInt]
+end
+
+-- Takes a progress bar image node created by the above function and updates it based on the progress parameter.
+function StatusPanel:updateProgressBar(progressBarImageNode, progress)
+    local progressBarImage = self:getProgressBarImage(progress)
+    progressBarImageNode.img = progressBarImage
 end
 
 -- Takes a level text node created by the above function and updates it based on the level paramter.

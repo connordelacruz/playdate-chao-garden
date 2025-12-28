@@ -66,7 +66,8 @@ function GardenScene:createBoundaries()
         0, SCREEN_HEIGHT - kWallThiccness, SCREEN_WIDTH, kWallThiccness
     )
 
-    for _,boundarySprite in ipairs(self.boundaries) do
+    for i=1,#self.boundaries do
+        local boundarySprite = self.boundaries[i]
         boundarySprite:setTag(TAGS.SCREEN_BOUNDARY)
         boundarySprite:add()
     end

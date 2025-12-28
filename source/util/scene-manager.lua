@@ -113,7 +113,7 @@ end
 
 function SceneManager:removeAllTimers()
     local timers = pd.timer.allTimers()
-    for _, timer in ipairs(timers) do
-        timer:remove()
+    for i=1,#timers do
+        timers[i]:remove()
     end
 end

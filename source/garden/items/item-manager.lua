@@ -51,7 +51,8 @@ end
 function ItemManager:saveData()
     local data = {}
     -- Save item classes and positions
-    for i,item in ipairs(self.items) do
+    for i=1,#self.items do
+        local item = self.items[i]
         data[i] = {
             className = item.className,
             x = item.lastValidCoordinates.x,
@@ -68,7 +69,8 @@ function ItemManager:loadData()
         return
     end
     DEBUG_MANAGER:vPrint('ItemManager: loading item data...')
-    for _,itemData in ipairs(data) do
+    for i=1,#data do
+        local itemData = data[i]
         self:addNewItem(itemData.className, itemData.x, itemData.y)
         DEBUG_MANAGER:vPrint('- '..itemData.className..'('..itemData.x..','..itemData.y..')', 1)
     end
@@ -130,14 +132,14 @@ end
 
 -- Call whenever indexes change on self.items
 function ItemManager:updateItemIndexes()
-    for i,item in ipairs(self.items) do
-        item:setManagerIndex(i)
+    for i=1,#self.items do
+        self.items[i]:setManagerIndex(i)
     end
 end
 
 -- Mostly for testing, probably won't get used IRL
 function ItemManager:removeAll()
-    for i,_ in ipairs(self.items) do
+    for i=1,#self.items do
         self:removeItem(i)
     end
 end

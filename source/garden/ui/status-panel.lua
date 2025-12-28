@@ -227,6 +227,7 @@ function StatusPanel:createOrUpdateEditNameClickTarget()
         self.editNameClickTarget = EditNameClickTarget(self)
     else
         self.editNameClickTarget.chao = self.chao
+        -- TODO: just calculate rect size once!! No sense in doing anything but the largest
         self.editNameClickTarget:updateRect()
     end
 end
@@ -278,7 +279,8 @@ function StatusPanel:createStatsUI()
         stats = self.chao.data.stats
     else
         -- Default to all 0's
-        for _,statIndex in ipairs(kStatIndexesInOrder) do
+        for i=1,#kStatIndexesInOrder do
+            local statIndex = kStatIndexesInOrder[i]
             stats[statIndex] = {
                 level = 0,
                 progress = 0,
@@ -573,16 +575,8 @@ end
 
 function EditNameClickTarget:update()
     -- Determine if cursor is hovering over this
-    -- TODO: keep a reference to cursor! this is wasteful!!
-    -- local overlapping = self:overlappingSprites()
-    -- local isCursorHovering = false
-    -- for _,other in pairs(overlapping) do
-    --     if other:getTag() == TAGS.CURSOR then
-    --         isCursorHovering = true
-    --         break
-    --     end
-    -- end
     -- TODO: cache self bounds rect
+    -- TODO: account for shifted cursor collision rect
     local isCursorHovering = self:getBoundsRect():intersects(self.cursor:getBoundsRect())
     self:setVisible(isCursorHovering)
 end

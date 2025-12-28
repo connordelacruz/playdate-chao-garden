@@ -239,7 +239,8 @@ end
 -- Check if a collision tag is in collidesWithTags.
 function Cursor:shouldCollideWithTag(tag)
     -- TODO: can we do caching to make this more efficient?
-    for _,collidesWithTag in ipairs(self.collidesWithTags) do
+    for i=1,#self.collidesWithTags do
+        local collidesWithTag = self.collidesWithTags[i]
         if collidesWithTag == tag then
             return true
         end
@@ -392,7 +393,8 @@ end
 function Cursor:handleClick()
     if pd.buttonJustPressed(pd.kButtonA) then
         local overlapping = self:overlappingSprites()
-        for _, other in ipairs(overlapping) do
+        for i=1,#overlapping do
+            local other = overlapping[i]
             if self:isTargetClickable(other) then
                 other:click(self)
                 break

@@ -33,8 +33,8 @@ TAG_NAMES = {
     'POND',
 }
 TAGS = {}
-for i,tag in ipairs(TAG_NAMES) do
-    TAGS[tag] = i
+for i=1,#TAG_NAMES do
+    TAGS[TAG_NAMES[i]] = i
 end
 
 -- --------------------------------------------------------------------------------

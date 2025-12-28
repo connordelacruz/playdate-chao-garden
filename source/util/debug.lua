@@ -23,8 +23,8 @@ local kDebugOptions <const> = {
 -- Bit masks generated from above options
 local function generateDebugMasks()
     local masks = {}
-    for i,opt in ipairs(kDebugOptions) do
-        masks[opt] = 2 ^ (i - 1)
+    for i=1,#kDebugOptions do
+        masks[kDebugOptions[i]] = 2 ^ (i - 1)
     end
     return masks
 end

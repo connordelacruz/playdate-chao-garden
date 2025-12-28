@@ -45,7 +45,8 @@ function GardenBackground:createPondBoundaries()
         bgBoundsRect.x + 96, 179, 125 - 96, 187 - 179
     )
 
-    for _,boundarySprite in ipairs(self.pondBoundaries) do
+    for i=1,#self.pondBoundaries do
+        local boundarySprite = self.pondBoundaries[i]
         boundarySprite:setTag(TAGS.POND)
         boundarySprite:add()
     end

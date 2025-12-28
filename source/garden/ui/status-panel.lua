@@ -79,8 +79,9 @@ local kStatIndexesInOrder <const> = {
 class('StatusPanel').extends(gfx.sprite)
 
 -- panelWidth: Set to screen width minus background width
-function StatusPanel:init(panelWidth)
+function StatusPanel:init(panelWidth, cursor)
     StatusPanel.super.init(self)
+    self.cursor = cursor
     -- --------------------------------------------------------------------------------
     -- Data
     -- --------------------------------------------------------------------------------
@@ -173,10 +174,11 @@ function StatusPanel:createPanelUI()
 end
 
 -- Update UI. Call after making changes to specific UI properties.
-function StatusPanel:updateUI()
-    -- TODO: I think layout() only needs to happen when name changes??
-    -- TODO: can we only redraw shit that we change??? need to dig thru the code and figure out
-    self.panelUI:layout()
+-- Set recomputeLayout to true to call self.panelUI:layout() before drawing.
+function StatusPanel:updateUI(recomputeLayout)
+    if recomputeLayout == true then
+        self.panelUI:layout()
+    end
     self.panelUI:draw()
 end
 
@@ -185,7 +187,7 @@ end
 -- --------------------------------------------------------------------------------
 
 -- Returns UI node for name section.
--- Sets self.nameTextNode.
+-- Sets self.nameTextNode and self.nameContainer.
 function StatusPanel:createNameUI()
     local name = self.chao == nil and '' or self.chao.data.name
     self.nameTextNode = text(name, {
@@ -193,7 +195,7 @@ function StatusPanel:createNameUI()
         style = kNameTextStyle,
     })
 
-    return box({
+    self.nameContainer = box({
             id = 'name-container',
             minWidth = 66,
         },
@@ -201,12 +203,16 @@ function StatusPanel:createNameUI()
             self.nameTextNode,
         }
     )
+    return self.nameContainer
 end
 
 -- Update Chao name to match self.chao.
+-- Also recomputes panel UI layout and updates edit name click target.
 function StatusPanel:updateChaoName()
     local name = self.chao == nil and '' or self.chao.data.name
     self.nameTextNode.text = name
+    -- Need to recompute layout so we can update edit click target.
+    self.panelUI:layout()
     -- Update edit click target rect to match new name size.
     self:createOrUpdateEditNameClickTarget()
 end
@@ -218,7 +224,7 @@ function StatusPanel:createOrUpdateEditNameClickTarget()
         return
     end
     if self.editNameClickTarget == nil then
-        self.editNameClickTarget = EditNameClickTarget(self, self.chao)
+        self.editNameClickTarget = EditNameClickTarget(self)
     else
         self.editNameClickTarget.chao = self.chao
         self.editNameClickTarget:updateRect()
@@ -480,11 +486,13 @@ class('EditNameClickTarget').extends(gfx.sprite)
 -- TODO: Freeze game when edit menu is open!!!!!! it lags otherwise
 -- TODO: !!!!!!!!
 
-function EditNameClickTarget:init(statusPanel, chao)
+function EditNameClickTarget:init(statusPanel)
     EditNameClickTarget.super.init(self)
 
     self.statusPanel = statusPanel
-    self.chao = chao
+    self.chao = statusPanel.chao
+    self.nameContainer = statusPanel.nameContainer
+    self.cursor = statusPanel.cursor
 
     -- Rect size/stroke stuff
     self.stroke = 2
@@ -505,11 +513,12 @@ function EditNameClickTarget:init(statusPanel, chao)
     self:add()
 end
 
+-- TODO: just precalculate this rect, don't bother resizing it!!!
 function EditNameClickTarget:updateRect()
-    local nameContainerRect = self.statusPanel.panelUI:get('name-container').rect
+    local nameContainerRect = self.nameContainer.rect
     local hPaddingAdding = 2 * self.hPadding
     local vPaddingAdding = 2 * self.vPadding
-    self:setSize(nameContainerRect.width + hPaddingAdding, 
+    self:setSize(nameContainerRect.width + hPaddingAdding,
                  nameContainerRect.height + vPaddingAdding)
     self:moveTo(nameContainerRect:centerPoint())
     self:updateHoverImage()
@@ -564,15 +573,17 @@ end
 
 function EditNameClickTarget:update()
     -- Determine if cursor is hovering over this
-    -- TODO: probably move logic to cursor / use states n shit but this is ok for a draft
-    local overlapping = self:overlappingSprites()
-    local isCursorHovering = false
-    for _,other in pairs(overlapping) do
-        if other:getTag() == TAGS.CURSOR then
-            isCursorHovering = true
-            break
-        end
-    end
+    -- TODO: keep a reference to cursor! this is wasteful!!
+    -- local overlapping = self:overlappingSprites()
+    -- local isCursorHovering = false
+    -- for _,other in pairs(overlapping) do
+    --     if other:getTag() == TAGS.CURSOR then
+    --         isCursorHovering = true
+    --         break
+    --     end
+    -- end
+    -- TODO: cache self bounds rect
+    local isCursorHovering = self:getBoundsRect():intersects(self.cursor:getBoundsRect())
     self:setVisible(isCursorHovering)
 end
 

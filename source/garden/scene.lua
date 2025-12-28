@@ -17,10 +17,10 @@ class('GardenScene').extends(gfx.sprite)
 function GardenScene:init()
     -- Background
     self.bg = GardenBackground()
-    -- Status Panel UI
-    self.statusPanel = StatusPanel(SCREEN_WIDTH - self.bg.width)
     -- Cursor
     self.cursor = Cursor(SCREEN_WIDTH - 64, 64)
+    -- Status Panel UI
+    self.statusPanel = StatusPanel(SCREEN_WIDTH - self.bg.width, self.cursor)
     -- Chao
     local gardenCenterX = 400 - (self.bg.width / 2)
     self.chao = Chao(self, gardenCenterX, SCREEN_CENTER_Y)

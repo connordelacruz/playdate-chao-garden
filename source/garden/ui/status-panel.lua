@@ -136,9 +136,13 @@ end
 
 -- Initialize UI tree and set image.
 function StatusPanel:initializeUI()
+    -- Initialize images to use for progress bars
+    self:initializeProgressChunkImages()
+    -- Build and render UI.
     self.panelUI = playout.tree.new(self:createPanelUI())
     local panelImage = self.panelUI:draw()
     self:setImage(panelImage)
+    -- Create edit name click target.
     self:createOrUpdateEditNameClickTarget()
 end
 
@@ -171,6 +175,7 @@ end
 -- Update UI. Call after making changes to specific UI properties.
 function StatusPanel:updateUI()
     -- TODO: I think layout() only needs to happen when name changes??
+    -- TODO: can we only redraw shit that we change??? need to dig thru the code and figure out
     self.panelUI:layout()
     self.panelUI:draw()
 end
@@ -373,7 +378,7 @@ function StatusPanel:createBarUI(title, progress, level)
     return barSectionContainer, progressBarContainer, levelText
 end
 
--- Create a progress bar box
+-- Create a progress bar box.
 function StatusPanel:createProgressBar(progress)
     -- Convert progress percent to rounded down int
     local progressInt = progress // 10
@@ -381,12 +386,10 @@ function StatusPanel:createProgressBar(progress)
     local progressBarChildren = {}
     for i=1,10 do
         local filled = i <= progressInt
-        local progressChunkBox = box({
-            style = kProgressBarChunkStyle,
-            flex = 1,
-            backgroundColor = filled and gfx.kColorBlack or gfx.kColorWhite,
-        })
-        progressBarChildren[i] = progressChunkBox
+        local progressChunkImage = image(
+            filled and self.progressChunkFilled or self.progressChunkEmpty
+        )
+        progressBarChildren[i] = progressChunkImage
     end
 
     return box({
@@ -395,13 +398,34 @@ function StatusPanel:createProgressBar(progress)
         progressBarChildren)
 end
 
+-- Initialize images for progress bar chunks.
+-- NOTE: relies on self.panelWidth for sizing.
+function StatusPanel:initializeProgressChunkImages()
+    -- Calculate full bar width (panel size - padding)
+    local fullBarWidth <const> = self.panelWidth - (STYLE_ROOT_PANEL.paddingLeft + STYLE_ROOT_PANEL.paddingRight)
+    -- Progress chunk width is 1/10 of the full bar
+    local progressChunkWidth <const> = fullBarWidth // 10
+    -- Initialize filled and empty progress bar chunk images
+    self.progressChunkEmpty = gfx.image.new(progressChunkWidth, kProgressBarChunkStyle.height)
+    gfx.pushContext(self.progressChunkEmpty)
+        gfx.setStrokeLocation(gfx.kStrokeInside)
+        gfx.setLineWidth(kProgressBarChunkStyle.border)
+        gfx.drawRoundRect(0, 0, progressChunkWidth, kProgressBarChunkStyle.height, kProgressBarChunkStyle.borderRadius)
+    gfx.popContext()
+    self.progressChunkFilled = gfx.image.new(progressChunkWidth, kProgressBarChunkStyle.height)
+    gfx.pushContext(self.progressChunkFilled)
+        gfx.setStrokeLocation(gfx.kStrokeInside)
+        gfx.fillRoundRect(0, 0, progressChunkWidth, kProgressBarChunkStyle.height, kProgressBarChunkStyle.borderRadius)
+    gfx.popContext()
+end
+
 -- Takes a progress bar box created by the above function and updates it based on the progress parameter.
 function StatusPanel:updateProgressBar(progressBarContainer, progress)
     local progressInt = progress // 10
     for i=1,#progressBarContainer.children do
-        local progressChunkBox = progressBarContainer.children[i]
+        local progressChunkImage = progressBarContainer.children[i]
         local filled = i <= progressInt
-        progressChunkBox.properties.backgroundColor = filled and gfx.kColorBlack or gfx.kColorWhite
+        progressChunkImage.img = filled and self.progressChunkFilled or self.progressChunkEmpty
     end
 end
 

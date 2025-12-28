@@ -44,6 +44,10 @@ local kCollidesWithTags <const> = {
 -- -------------------------------------------------------------------------------
 -- Duration in seconds of mood cooldown (so you can't just spam petting)
 local kMoodBoostCooldown <const> = 10
+-- Duration in seconds of mood drain timer
+-- TODO: Once fruits and minigames are implemented, decide if this is too long
+-- TODO: Once weeds are implemented, maybe decrease duration proportionally to weeds?
+local kMoodDrainTimerDuration <const> = 60
 
 -- ===============================================================================
 -- Chao States
@@ -190,6 +194,8 @@ class('ChaoPettingState', {
 function ChaoPettingState:enter()
     self.chao:setAngle(270)
     self.chao:pet()
+    -- Pause mood drain
+    self.chao:pauseMoodDrainTimer()
 end
 
 function ChaoPettingState:update()
@@ -198,7 +204,10 @@ end
 
 function ChaoPettingState:exit()
     self.chao:pausePettingAnimation()
-    if self.cursor ~= nil and self.cursor.className == 'Cursor' then
+    -- Restart mood drain timer
+    self.chao:restartMoodDrainTimer()
+    -- Re-enable cursor
+    if self.cursor ~= nil then
         self.cursor:enable()
     end
 end
@@ -340,7 +349,8 @@ function Chao:init(gardenScene, startX, startY)
     -- Timestamp of last mood boost from petting. Used for cooldown calculation.
     -- Default to negative of cooldown so first pet is always a boost.
     self.lastMoodBoostTimestamp = kMoodBoostCooldown * -1000
-    -- TODO: decrease mood over time
+    -- Initialize self.moodDrainTimer.
+    self:initializeMoodDrainTimer()
     -- ================================================================================
     -- State
     -- ================================================================================
@@ -445,7 +455,6 @@ end
 -- --------------------------------------------------------------------------------
 -- Mood Functions
 -- --------------------------------------------------------------------------------
--- TODO: logic for decreasing mood over time
 
 -- Set mood value. Ensures value is between 0 and 100.
 function Chao:setMood(val)
@@ -460,14 +469,27 @@ function Chao:setMood(val)
     self.scene.statusPanel:updateUI()
 end
 
+-- Update timestamp of last time mood was boosted.
+-- (Also resets when Chao is pet to prevent spamming).
+function Chao:updateLastMoodBoostTimestamp()
+    self.lastMoodBoostTimestamp = pd.getCurrentTimeMilliseconds()
+end
+
 -- Boost mood by 10% (up to 100%) and play happy sound
 function Chao:boostMood()
     if self.data.mood < 100 then
         self:setMood(self.data.mood + 10)
         -- Update timestamp for cooldown calculations
-        self.lastMoodBoostTimestamp = pd.getCurrentTimeMilliseconds()
+        self:updateLastMoodBoostTimestamp()
         -- Sound cue
         self:playHappySound()
+    end
+end
+
+-- Drain mood by 10%.
+function Chao:drainMood()
+    if self.data.mood > 0 then
+        self:setMood(self.data.mood - 10)
     end
 end
 
@@ -482,7 +504,40 @@ function Chao:canBoostMood()
     return self.data.mood < 100 and self:isMoodBoostCooldownComplete()
 end
 
--- TODO: mood drain logic
+-- Initialize mood drain timer.
+function Chao:initializeMoodDrainTimer()
+    self.moodDrainTimer = pd.timer.new(kMoodDrainTimerDuration * 1000, function ()
+        DEBUG_MANAGER:vPrint('Chao: Mood drain timer ended, draining mood and restarting timer.')
+        -- Drain mood
+        self:drainMood()
+        -- Restart timer
+        self:restartMoodDrainTimer()
+    end)
+    self.moodDrainTimer.repeats = true
+end
+
+function Chao:pauseMoodDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Pausing mood drain timer.')
+    self.moodDrainTimer:pause()
+end
+
+function Chao:playMoodDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Starting mood drain timer.')
+    self.moodDrainTimer:start()
+end
+
+function Chao:restartMoodDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Restarting mood drain timer.')
+    self.moodDrainTimer:reset()
+    self.moodDrainTimer:start()
+end
+
+-- NOTE: Not sure if this will ever get used, but might as well add it for completeness.
+-- If this does get implemented, make sure to add nil checks to above functions.
+function Chao:removeMoodDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Removing mood drain timer.')
+    self.moodDrainTimer:remove()
+end
 
 -- --------------------------------------------------------------------------------
 -- Walk/Idle Image + Sound Functions
@@ -609,7 +664,6 @@ end
 -- Set callback to switch Chao state when pet sound finishes.
 function Chao:setPetSoundFinishCallback()
     kSounds.pet:setFinishCallback(function ()
-        -- TODO: always reset mood drain timer; maybe always reset mood boost cooldown too??
         if self:canBoostMood() then
             DEBUG_MANAGER:vPrint('Chao: Boosting mood')
             self:setState(kMoodBoostState)
@@ -617,6 +671,8 @@ function Chao:setPetSoundFinishCallback()
             DEBUG_MANAGER:vPrint('Chao: Mood cannot be boosted')
             self:setState(kIdleState)
         end
+        -- Regardless, update last mood boost timer.
+        self:updateLastMoodBoostTimestamp()
     end)
 end
 

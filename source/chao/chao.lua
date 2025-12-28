@@ -456,7 +456,7 @@ function Chao:setMood(val)
     end
     self.data.mood = val
     -- Update status panel UI
-    -- TODO: need to call updateMood() or something
+    self.scene.statusPanel:updateMood()
     self.scene.statusPanel:updateUI()
 end
 

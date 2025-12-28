@@ -119,12 +119,14 @@ end
 -- Setters
 -- --------------------------------------------------------------------------------
 
--- TODO: reorganize/move this?
+-- Set self.chao, update UI nodes, and re-draw UI.
 function StatusPanel:setChao(chao)
     self.chao = chao
     self:updateChaoName()
     self:createOrUpdateEditNameClickTarget()
-    -- TODO: update mood, belly, stats
+    self:updateMood()
+    self:updateBelly()
+    self:updateStats()
     self:updateUI()
 end
 
@@ -168,6 +170,7 @@ end
 
 -- Update UI. Call after making changes to specific UI properties.
 function StatusPanel:updateUI()
+    -- TODO: I think layout() only needs to happen when name changes??
     self.panelUI:layout()
     self.panelUI:draw()
 end
@@ -222,10 +225,17 @@ end
 -- --------------------------------------------------------------------------------
 
 -- Returns UI node for mood section.
--- TODO: set a reference to bars section or whatever so we can update
+-- Sets self.moodProgressBar.
 function StatusPanel:createMoodUI()
     local mood = self.chao == nil and 0 or self.chao.data.mood
-    return self:createBarUI('Mood', mood, nil)
+    local moodUI, moodProgressBar, _ = self:createBarUI('Mood', mood, nil)
+    self.moodProgressBar = moodProgressBar
+    return moodUI
+end
+
+-- Updates mood progress bar to match self.chao's data.
+function StatusPanel:updateMood()
+    self:updateProgressBar(self.moodProgressBar, self.chao.data.mood)
 end
 
 -- --------------------------------------------------------------------------------
@@ -233,10 +243,17 @@ end
 -- --------------------------------------------------------------------------------
 
 -- Returns UI node for belly section.
--- TODO: set a reference to bars section or whatever so we can update
+-- Sets self.bellyProgressBar.
 function StatusPanel:createBellyUI()
     local belly = self.chao == nil and 0 or self.chao.data.belly
-    return self:createBarUI('Belly', belly, nil)
+    local bellyUI, bellyProgressBar, _ = self:createBarUI('Belly', belly, nil)
+    self.bellyProgressBar = bellyProgressBar
+    return bellyUI
+end
+
+-- Updates belly progress bar to match self.chao's data.
+function StatusPanel:updateBelly()
+    self:updateProgressBar(self.bellyProgressBar, self.chao.data.belly)
 end
 
 -- --------------------------------------------------------------------------------
@@ -258,12 +275,23 @@ function StatusPanel:createStatsUI()
         end
     end
 
+    -- Will store level text nodes and progress bar containers for each stat so we can update them later.
+    self.statsUI = {}
+    -- List of UI nodes for each stat section
     local statsUIChildren = {}
-    for _,statIndex in ipairs(kStatIndexesInOrder) do
+    for i=1,#kStatIndexesInOrder do
+        local statIndex = kStatIndexesInOrder[i]
         local statData = stats[statIndex]
         local title = statIndex:gsub("^%l", string.upper)
-        local statUI = self:createStatUI(title, statData)
+        -- TODO: have this return all 3 vals, add a dict to store these in to reference later
+        local statUI, statProgressBar, statLevelText = self:createStatUI(title, statData)
+        -- Append node to children
         statsUIChildren[#statsUIChildren+1] = statUI
+        -- Store progress bar and level text for UI updates.
+        self.statsUI[statIndex] = {
+            progressBar = statProgressBar,
+            levelText = statLevelText,
+        }
     end
 
     -- TODO: JUST RETURN statsUIChildren unpacked?
@@ -273,21 +301,38 @@ function StatusPanel:createStatsUI()
     )
 end
 
--- Create a single stat section
+-- Create a single stat section.
 function StatusPanel:createStatUI(statName, statData)
     local progress = statData == nil and 0 or statData.progress
     local level = statData == nil and 0 or statData.level
     return self:createBarUI(statName, progress, level)
 end
 
+-- Update progress bar and level to match self.chao's data based for the specified stat index.
+function StatusPanel:updateStatUI(statIndex)
+    local statNodes = self.statsUI[statIndex]
+    local chaoStatData = self.chao.data.stats[statIndex]
+    self:updateProgressBar(statNodes.progressBar, chaoStatData.progress)
+    self:updateLevelText(statNodes.levelText, chaoStatData.level)
+end
+
+-- Update all stats UI sections.
+function StatusPanel:updateStats()
+    for i=1,#kStatIndexesInOrder do
+        local statIndex = kStatIndexesInOrder[i]
+        self:updateStatUI(statIndex)
+    end
+end
+
 -- --------------------------------------------------------------------------------
 -- Bar UI (mood, belly, stats sections)
 -- --------------------------------------------------------------------------------
 
--- TODO: figure out how we can keep track of and update progress bar and level
--- TODO: maybe return container, levelTextNode, progressBarContainer separately?
-
--- Create a bar UI section (mood/belly + stats)
+-- Create a bar UI section with optional level text.
+-- Returns 3 values:
+--  1. The entire bar section UI container node
+--  2. The progress bar container node
+--  3. The level text node
 function StatusPanel:createBarUI(title, progress, level)
     -- Title and optional LV display
     local titleText = text(
@@ -315,7 +360,8 @@ function StatusPanel:createBarUI(title, progress, level)
     -- Progress bar
     local progressBarContainer = self:createProgressBar(progress)
 
-    return box({
+    -- Top level container
+    local barSectionContainer = box({
             style = kBarUIContainerStyle,
         },
         {
@@ -323,6 +369,8 @@ function StatusPanel:createBarUI(title, progress, level)
             progressBarContainer,
         }
     )
+
+    return barSectionContainer, progressBarContainer, levelText
 end
 
 -- Create a progress bar box
@@ -345,6 +393,22 @@ function StatusPanel:createProgressBar(progress)
             style = kProgressBarContainerStyle,
         },
         progressBarChildren)
+end
+
+-- Takes a progress bar box created by the above function and updates it based on the progress parameter.
+function StatusPanel:updateProgressBar(progressBarContainer, progress)
+    local progressInt = progress // 10
+    for i=1,#progressBarContainer.children do
+        local progressChunkBox = progressBarContainer.children[i]
+        local filled = i <= progressInt
+        progressChunkBox.properties.backgroundColor = filled and gfx.kColorBlack or gfx.kColorWhite
+    end
+end
+
+-- Takes a level text node created by the above function and updates it based on the level paramter.
+function StatusPanel:updateLevelText(levelTextNode, level)
+    local levelText = level == nil and '' or 'LV ' .. level
+    levelTextNode.text = levelText
 end
 
 -- --------------------------------------------------------------------------------
@@ -382,6 +446,9 @@ end
 -- Edit Name Click Target
 -- ================================================================================
 class('EditNameClickTarget').extends(gfx.sprite)
+-- TODO: !!!!!!!!
+-- TODO: try and optimize like the stats panel
+-- TODO: !!!!!!!!
 
 -- TODO: !!!!!!!!
 -- TODO: Freeze game when edit menu is open!!!!!! it lags otherwise

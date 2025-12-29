@@ -52,6 +52,12 @@ local kMoodBoostCooldown <const> = 10
 -- TODO: Once fruits and minigames are implemented, decide if this is too short/long
 -- TODO: Once weeds are implemented, maybe decrease duration proportionally to weeds?
 local kMoodDrainTimerDuration <const> = 45
+-- -------------------------------------------------------------------------------
+-- Stat indexes
+-- -------------------------------------------------------------------------------
+local kStatIndexes <const> = {
+    'swim', 'fly', 'run', 'power', 'stamina',
+}
 
 -- ===============================================================================
 -- Chao States
@@ -280,7 +286,6 @@ end
 
 function ChaoEatingState:exit()
     self.chao:pauseEatingAnimation()
-    -- TODO: update stats, figure out how to incrementally update bars later
     self.chao:removeItem()
 end
 
@@ -523,6 +528,37 @@ function Chao:setName(newName)
     self.data.name = newName
 end
 
+-- --------------------------------------------------------------------------------
+-- Stat Setters
+-- --------------------------------------------------------------------------------
+
+-- Add to a stat's progress bar, level up if progress exceeds 100.
+-- Returns true if stat leveled up.
+function Chao:addToStatProgress(statIndex, addProgress)
+    -- TODO: make sure this updates properly, I think it should cuz it's just a pointer right?
+    -- TODO: handle negative
+    local statData = self.data.stats[statIndex]
+    local newProgress = statData.progress + addProgress
+    local levelUp = newProgress >= 100
+    -- Level up if progress > 100
+    if levelUp then
+        statData.level += newProgress // 100
+        newProgress = newProgress % 100
+    end
+    -- Progress cannot go below 0
+    if newProgress < 0 then
+        newProgress = 0
+    end
+    statData.progress = newProgress
+    -- Update UI, redraw if level up text changed
+    self.scene.statusPanel:updateStatUI(statIndex)
+    self.scene.statusPanel:updateUI(levelUp)
+    -- Logging
+    DEBUG_MANAGER:vPrint('Chao: updated ' .. statIndex .. ': level=' .. statData.level .. ', progress=' .. statData.progress)
+
+    return levelUp
+end
+
 -- ================================================================================
 -- Angle, Collisions, Walking, and Idling
 -- ================================================================================
@@ -745,6 +781,11 @@ function Chao:setMood(val)
     self.scene.statusPanel:updateUI()
 end
 
+-- Add a value to mood.
+function Chao:addToMood(val)
+    self:setMood(self.data.mood + val)
+end
+
 -- Update timestamp of last time mood was boosted.
 -- (Also resets when Chao is pet to prevent spamming).
 function Chao:updateLastMoodBoostTimestamp()
@@ -754,7 +795,7 @@ end
 -- Boost mood by 10% (up to 100%) and play happy sound
 function Chao:boostMood()
     if self.data.mood < 100 then
-        self:setMood(self.data.mood + 10)
+        self:addToMood(10)
         -- Update timestamp for cooldown calculations
         self:updateLastMoodBoostTimestamp()
         -- Sound cue
@@ -765,7 +806,7 @@ end
 -- Drain mood by 10%.
 function Chao:drainMood()
     if self.data.mood > 0 then
-        self:setMood(self.data.mood - 10)
+        self:addToMood(-10)
     end
 end
 
@@ -913,6 +954,29 @@ end
 -- ================================================================================
 
 -- --------------------------------------------------------------------------------
+-- Belly Functions
+-- --------------------------------------------------------------------------------
+
+-- Set belly value. Ensure value is between 0 and 100.
+function Chao:setBelly(val)
+    if val < 0 then
+        val = 0
+    elseif val > 100 then
+        val = 100
+    end
+    -- Update status panel UI
+    self.scene.statusPanel:updateBelly()
+    self.scene.statusPanel:updateUI()
+end
+
+-- Add a value to belly.
+function Chao:addToBelly(val)
+    self:setBelly(self.data.belly + val)
+end
+
+-- TODO: drain logic, is belly full
+
+-- --------------------------------------------------------------------------------
 -- Item Holding Functions
 -- --------------------------------------------------------------------------------
 
@@ -921,7 +985,7 @@ function Chao:canAcceptItems()
     return self.state.canAcceptItems
 end
 
--- TODO: giveItem(item), eat if edible and can eat
+-- Set self.item and switch states based on item type.
 function Chao:giveItem(item)
     self.item = item
     if item.isEdible then
@@ -929,7 +993,7 @@ function Chao:giveItem(item)
         self:setState(kEatingState)
         DEBUG_MANAGER:vPrint('Chao: given edible item.')
     end
-    -- TODO: implement interactive items that aren't food
+    -- TODO: implement interactive items that aren't food + fallback for possible edge cases?
 end
 
 -- Remove current item.
@@ -939,7 +1003,7 @@ function Chao:removeItem()
 end
 
 -- --------------------------------------------------------------------------------
--- Eating/Belly Functions
+-- Eating Functions
 -- --------------------------------------------------------------------------------
 
 -- Update and play eating animation, play eating sound, move item.
@@ -949,6 +1013,9 @@ function Chao:eat()
     self:moveItemForEatingAnimation(direction)
     self:playEatingAnimation()
     self:playEatingSound()
+    -- TODO: figure out level up sound
+    -- TODO: use animator to increment stats in chunks??
+    local levelUp = self:addStatsFromItem()
 end
 
 -- Move self.item to a position for eating animation based on direction.
@@ -959,6 +1026,39 @@ function Chao:moveItemForEatingAnimation(direction)
     else
         self.item:moveTo(self.x - halfWidth, self.y)
     end
+end
+
+-- --------------------------------------------------------------------------------
+-- Updating Stats from Item
+-- --------------------------------------------------------------------------------
+
+-- Update stat progress from currently held item.
+-- Returns true if one or more stats levelled up.
+function Chao:addStatsFromItem()
+    -- Shouldn't hit this, but just in case, don't bother if item.attributes not set.
+    if self.item == nil or self.item.attributes == nil then
+        return
+    end
+    local attributes = self.item.attributes
+    -- Mood/belly
+    if type(attributes.mood) == 'number' then
+        self:addToMood(10 * attributes.mood)
+    end
+    if type(attributes.belly) == 'number' then
+        self:addToBelly(10 * attributes.belly)
+    end
+    -- Stat progress
+    local levelUp = false
+    for i=1,#kStatIndexes do
+        local statIndex = kStatIndexes[i]
+        if attributes[statIndex] ~= nil then
+            if type(attributes[statIndex]) == 'number' then
+                levelUp = levelUp or self:addToStatProgress(statIndex, 10 * attributes[statIndex])
+            end
+        end
+    end
+
+    return levelUp
 end
 
 -- --------------------------------------------------------------------------------

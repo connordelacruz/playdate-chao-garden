@@ -110,7 +110,7 @@ function CursorGrabbingState:update()
 end
 
 function CursorGrabbingState:exit()
-    -- TODO: extract some of this logic, wanna handle differently when feeding chao
+    -- TODO: is this a problem when feeding Chao?
     -- Update last valid coordinates of item and set cursor.item to nil
     self.cursor.item:updateLastValidCoordinates()
     self.cursor.item = nil
@@ -316,16 +316,15 @@ end
 -- Place item, handle logic for giving interactable items to Chao.
 function Cursor:placeItem()
     -- TODO: also make sure we're placing it in a valid spot, check garden bounds or whatever
-    
     -- If this is an item Chao can take, and Chao is within the collision bounds, give it to the Chao
     if self.item.chaoCanTake then
         local chaoUnderCursorAndCanAcceptItems, chao = self:isChaoUnderCursorAndCanAcceptItems()
-        if chaoUnderCursorAndCanAcceptItems then
+        if chaoUnderCursorAndCanAcceptItems and chao ~= nil then
             DEBUG_MANAGER:vPrint('Cursor: Chao under cursor and can accept items')
-            -- TODO: chao:giveItem(self.item)
+            chao:giveItem(self.item)
         end
     end
-    
+
     self:setState(kActiveState)
 end
 

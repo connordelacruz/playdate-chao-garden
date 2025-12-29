@@ -64,6 +64,7 @@ local kIdleState <const> = 'idle'
 local kWalkingState <const> = 'walking'
 local kPettingState <const> = 'pet'
 local kMoodBoostState <const> = 'mood-boost'
+local kEatingState <const> = 'eating'
 
 -- --------------------------------------------------------------------------------
 -- Generic with common constructor and default props
@@ -75,7 +76,6 @@ class('ChaoState', {
     -- States we can transition to from this state
     nextStateOptions = {},
     -- Whether the Chao can be pet in this state
-    -- TODO: make this more robust? Per-state click()? Also handle eating
     canPet = true,
     -- Whether the Chao can accept holdable items in this state
     canAcceptItems = true,
@@ -249,6 +249,38 @@ function ChaoMoodBoostState:exit()
     self.chao:pauseHappyAnimation()
 end
 
+-- --------------------------------------------------------------------------------
+-- Eating:
+-- - Update and unpause eating animation
+-- - Move item relative to facing direction
+-- - Play eating animation + boost sound, gradually shrink item
+-- - Apply stat changes 
+-- - Delete item
+-- - Switch to idle state after delay
+-- --------------------------------------------------------------------------------
+class('ChaoEatingState', {
+    canPet = false,
+    canAcceptItems = false,
+}).extends('ChaoState')
+
+function ChaoEatingState:enter()
+    self.chao:eat()
+    pd.timer.performAfterDelay(2000, function ()
+        self.chao:setState(kIdle)
+    end)
+end
+
+function ChaoEatingState:update()
+    self.chao:setImageFromEatingAnimation()
+    -- TODO: shrink item?
+end
+
+function ChaoEatingState:exit()
+    self.chao:pauseEatingAnimation()
+    -- TODO: update stats, figure out how to incrementally update bars later
+    self.chao:removeItem()
+end
+
 -- ===============================================================================
 -- Chao Sprite Class
 -- ===============================================================================
@@ -357,6 +389,11 @@ function Chao:init(gardenScene, startX, startY)
     -- Speed Chao moves at (px / sec)
     self.speed = 20
     -- --------------------------------------------------------------------------------
+    -- Items
+    -- --------------------------------------------------------------------------------
+    -- Item Chao is currently holding
+    self.item = nil
+    -- --------------------------------------------------------------------------------
     -- Angle
     -- --------------------------------------------------------------------------------
     -- Angle the Chao is facing
@@ -373,6 +410,10 @@ function Chao:init(gardenScene, startX, startY)
     self.lastMoodBoostTimestamp = kMoodBoostCooldown * -1000
     -- Initialize self.moodDrainTimer.
     self:initializeMoodDrainTimer()
+    -- --------------------------------------------------------------------------------
+    -- Belly
+    -- --------------------------------------------------------------------------------
+    -- TODO: drain timer
     -- ================================================================================
     -- State
     -- ================================================================================
@@ -381,6 +422,7 @@ function Chao:init(gardenScene, startX, startY)
         [kWalkingState] = ChaoWalkingState(self),
         [kPettingState] = ChaoPettingState(self),
         [kMoodBoostState] = ChaoMoodBoostState(self),
+        [kEatingState] = ChaoEatingState(self),
     }
     self:setInitialState(kIdleState)
     -- When game starts, explicitly set duration of idle state
@@ -820,7 +862,6 @@ end
 -- Start petting animation and play sound effect.
 function Chao:pet()
     self:playPettingAnimation()
-    -- TODO: do we need to set this every time??
     self:setPetSoundFinishCallback()
     self:playPetSound()
 end
@@ -878,9 +919,48 @@ function Chao:canAcceptItems()
 end
 
 -- TODO: giveItem(item), eat if edible and can eat
+function Chao:giveItem(item)
+    self.item = item
+    if item.isEdible then
+        -- TODO: check if belly too full, drop item, play animation
+        self:setState(kEatingState)
+        DEBUG_MANAGER:vPrint('Chao: given edible item.')
+    end
+    -- TODO: implement interactive items that aren't food
+end
+
+-- Remove current item.
+function Chao:removeItem()
+    self.item:delete()
+    self.item = nil
+end
 
 -- --------------------------------------------------------------------------------
--- Eating Animation
+-- Eating/Belly Functions
+-- --------------------------------------------------------------------------------
+
+-- Update and play eating animation, play eating sound, move item.
+function Chao:eat()
+    -- TODO: do this relative to cursor position
+    local direction = self:angleToLeftOrRight()
+    self:updateEatingAnimation(direction)
+    self:moveItemForEatingAnimation(direction)
+    self:playEatingAnimation()
+    self:playEatingSound()
+end
+
+-- Move self.item to a position for eating animation based on direction.
+function Chao:moveItemForEatingAnimation(direction)
+    local halfWidth = self.width / 2
+    if direction == kRight then
+        self.item:moveTo(self.x + halfWidth, self.y)
+    else
+        self.item:moveTo(self.x - halfWidth, self.y)
+    end
+end
+
+-- --------------------------------------------------------------------------------
+-- Eating Animation + Sound Functions
 -- --------------------------------------------------------------------------------
 
 -- Initialize self.eatingLoop.
@@ -889,10 +969,12 @@ function Chao:initializeEatingAnimation()
     self.eatingLoop.paused = true
 end
 
--- Update self.eatingLoop, accounting for self.direction.
-function Chao:updateEatingAnimation()
+-- Update self.eatingLoop, accounting for direction.
+function Chao:updateEatingAnimation(direction)
     -- Only have sprites for left and right, so convert current angle to that.
-    local direction = self:angleToLeftOrRight()
+    if direction == nil then
+        direction = self:angleToLeftOrRight()
+    end
     self.eatingLoop.startFrame = self.eatingSpriteDir[direction] + self.eatingSpriteAction[kChomp1]
     self.eatingLoop.endFrame = self.eatingSpriteDir[direction] + self.eatingSpriteAction[kChomp2]
 end
@@ -907,4 +989,9 @@ end
 
 function Chao:setImageFromEatingAnimation()
     self:setImage(self.eatingLoop:image())
+end
+
+-- Play boost sound 3 times
+function Chao:playEatingSound()
+    kSounds.boost:play(3)
 end

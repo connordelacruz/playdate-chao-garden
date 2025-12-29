@@ -77,8 +77,8 @@ class('ChaoState', {
     -- Whether the Chao can be pet in this state
     -- TODO: make this more robust? Per-state click()? Also handle eating
     canPet = true,
-    -- Whether the Chao can accept food in this state
-    canEat = true,
+    -- Whether the Chao can accept holdable items in this state
+    canAcceptItems = true,
 }).extends('State')
 
 function ChaoState:init(chao)
@@ -192,7 +192,7 @@ end
 class('ChaoPettingState', {
     -- Not that this should happen since the cursor is locked, but whatever:
     canPet = false,
-    canEat = false,
+    canAcceptItems = false,
 }).extends('ChaoState')
 
 function ChaoPettingState:enter()
@@ -226,7 +226,7 @@ end
 -- --------------------------------------------------------------------------------
 class('ChaoMoodBoostState', {
     canPet = false,
-    canEat = false,
+    canAcceptItems = false,
 }).extends('ChaoState')
 
 function ChaoMoodBoostState:enter()
@@ -865,8 +865,19 @@ function Chao:playHappySound()
 end
 
 -- ================================================================================
--- Eating Mechanics
+-- Item Holding + Eating Mechanics
 -- ================================================================================
+
+-- --------------------------------------------------------------------------------
+-- Item Holding Functions
+-- --------------------------------------------------------------------------------
+
+-- Returns true if Chao can accept items in its current state.
+function Chao:canAcceptItems()
+    return self.state.canAcceptItems
+end
+
+-- TODO: giveItem(item), eat if edible and can eat
 
 -- --------------------------------------------------------------------------------
 -- Eating Animation

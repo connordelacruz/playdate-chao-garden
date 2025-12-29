@@ -110,6 +110,7 @@ function CursorGrabbingState:update()
 end
 
 function CursorGrabbingState:exit()
+    -- TODO: extract some of this logic, wanna handle differently when feeding chao
     -- Update last valid coordinates of item and set cursor.item to nil
     self.cursor.item:updateLastValidCoordinates()
     self.cursor.item = nil
@@ -283,6 +284,7 @@ end
 function Cursor:pet(chao)
     -- Move to chao's head
     -- TODO: figure out animating. Maybe cut sample to play once, then loop 3 times and use callbacks to move cursor?
+    -- TODO: careful with this, I can see a case where cursor gets pushed beyond top border
     self:moveWithCollisions(chao.x, chao.y - (chao.height / 4))
     self:setState(kPettingState)
 end
@@ -311,11 +313,33 @@ function Cursor:handleGrabbedItemMovement()
     )
 end
 
--- TODO: placeItem() (with validation). set self.item = nil and go back to active state
+-- Place item, handle logic for giving interactable items to Chao.
 function Cursor:placeItem()
     -- TODO: also make sure we're placing it in a valid spot, check garden bounds or whatever
-    -- TODO: also also, if placing near a chao and it's something it can interact with, do that!
+    
+    -- If this is an item Chao can take, and Chao is within the collision bounds, give it to the Chao
+    if self.item.chaoCanTake then
+        local chaoUnderCursorAndCanAcceptItems, chao = self:isChaoUnderCursorAndCanAcceptItems()
+        if chaoUnderCursorAndCanAcceptItems then
+            DEBUG_MANAGER:vPrint('Cursor: Chao under cursor and can accept items')
+            -- TODO: chao:giveItem(self.item)
+        end
+    end
+    
     self:setState(kActiveState)
+end
+
+-- Returns true if cursor is colliding with Chao and Chao can accept items in its current state.
+-- If true is returned, second return value is Chao object.
+function Cursor:isChaoUnderCursorAndCanAcceptItems()
+    local _, _, collisions, length = self:checkCollisions(self:getPosition())
+    for i = 1, length do
+        local other = collisions[i].other
+        if other:getTag() == TAGS.CHAO then
+            return other:canAcceptItems(), other
+        end
+    end
+    return false
 end
 
 -- --------------------------------------------------------------------------------

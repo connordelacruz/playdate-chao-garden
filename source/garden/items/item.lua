@@ -4,7 +4,12 @@ local gfx <const> = pd.graphics
 -- ===============================================================================
 -- Base Item Class
 -- ===============================================================================
-class('Item').extends(gfx.sprite)
+class('Item', {
+    -- If true, item can be given to Chao
+    chaoCanTake = true,
+    -- If true, Chao can eat item
+    isEdible = true,
+}).extends(gfx.sprite)
 
 -- NOTE: Call <Class>.super.init(self, <args>) AT THE END of the subclass init()
 function Item:init(x, y, itemManager)

@@ -30,6 +30,10 @@ local kRight <const> = 'right'
 local kIdle <const>  = 'idle'
 local kLStep <const> = 'lStep'
 local kRStep <const> = 'rStep'
+-- Eating: Frame names for animation
+local kHold <const> = 'hold'
+local kChomp1 <const> = 'chomp1'
+local kChomp2 <const> = 'chomp2'
 -- -------------------------------------------------------------------------------
 -- Collisions
 -- -------------------------------------------------------------------------------
@@ -317,6 +321,24 @@ function Chao:init(gardenScene, startX, startY)
     self.happyLoop = nil
     self:initializeHappyAnimation()
     -- --------------------------------------------------------------------------------
+    -- Eating
+    -- --------------------------------------------------------------------------------
+    self.eatingSpritesheet = gfx.imagetable.new('images/chao/chao-eat')
+    -- Index starts for directions
+    self.eatingSpriteDir = {
+        [kLeft] = 1,
+        [kRight] = 6,
+    }
+    -- Index modifiers to add to direction for eating animation frames
+    self.eatingSpriteAction = {
+        [kHold] = 0,
+        [kChomp1] = 1,
+        [kChomp2] = 2,
+    }
+    -- Animation loop for eating.
+    self.eatingLoop = nil
+    self:initializeEatingAnimation()
+    -- --------------------------------------------------------------------------------
     -- Default image 
     -- --------------------------------------------------------------------------------
     self.defaultImage = self:walkIdleSpritesheetImage(kDown, kIdle)
@@ -481,6 +503,16 @@ function Chao:angleToDirection()
         direction = kLeft
     elseif self.angle >= 225 and self.angle < 315 then
         direction = kDown
+    end
+    return direction
+end
+
+-- Returns kLeft if angle is between 90-269.
+-- Returns kRIght if angle is between 270-360 or 0-89.
+function Chao:angleToLeftOrRight()
+    local direction = kRight
+    if self.angle >= 90 and self.angle < 270 then
+        direction = kLeft
     end
     return direction
 end
@@ -830,4 +862,38 @@ end
 
 function Chao:playHappySound()
     kSounds.boost:play()
+end
+
+-- ================================================================================
+-- Eating Mechanics
+-- ================================================================================
+
+-- --------------------------------------------------------------------------------
+-- Eating Animation
+-- --------------------------------------------------------------------------------
+
+-- Initialize self.eatingLoop.
+function Chao:initializeEatingAnimation()
+    self.eatingLoop = gfx.animation.loop.new(200, self.eatingSpritesheet, true)
+    self.eatingLoop.paused = true
+end
+
+-- Update self.eatingLoop, accounting for self.direction.
+function Chao:updateEatingAnimation()
+    -- Only have sprites for left and right, so convert current angle to that.
+    local direction = self:angleToLeftOrRight()
+    self.eatingLoop.startFrame = self.eatingSpriteDir[direction] + self.eatingSpriteAction[kChomp1]
+    self.eatingLoop.endFrame = self.eatingSpriteDir[direction] + self.eatingSpriteAction[kChomp2]
+end
+
+function Chao:playEatingAnimation()
+    self.eatingLoop.paused = false
+end
+
+function Chao:pauseEatingAnimation()
+    self.eatingLoop.paused = true
+end
+
+function Chao:setImageFromEatingAnimation()
+    self:setImage(self.eatingLoop:image())
 end

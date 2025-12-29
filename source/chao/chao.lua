@@ -533,8 +533,9 @@ end
 -- --------------------------------------------------------------------------------
 
 -- Add to a stat's progress bar, level up if progress exceeds 100.
+-- Set skipUpdateUI to true if you don't want to update UI yet.
 -- Returns true if stat leveled up.
-function Chao:addToStatProgress(statIndex, addProgress)
+function Chao:addToStatProgress(statIndex, addProgress, skipUpdateUI)
     -- TODO: make sure this updates properly, I think it should cuz it's just a pointer right?
     -- TODO: handle negative
     local statData = self.data.stats[statIndex]
@@ -551,8 +552,10 @@ function Chao:addToStatProgress(statIndex, addProgress)
     end
     statData.progress = newProgress
     -- Update UI, redraw if level up text changed
-    self.scene.statusPanel:updateStatUI(statIndex)
-    self.scene.statusPanel:updateUI(levelUp)
+    if skipUpdateUI ~= true then
+        self.scene.statusPanel:updateStatUI(statIndex)
+        self.scene.statusPanel:updateUI(levelUp)
+    end
     -- Logging
     DEBUG_MANAGER:vPrint('Chao: updated ' .. statIndex .. ': level=' .. statData.level .. ', progress=' .. statData.progress)
 
@@ -769,7 +772,8 @@ end
 -- --------------------------------------------------------------------------------
 
 -- Set mood value. Ensures value is between 0 and 100.
-function Chao:setMood(val)
+-- Set skipUpdateUI to true if you don't want to update UI yet.
+function Chao:setMood(val, skipUpdateUI)
     if val < 0 then
         val = 0
     elseif val > 100 then
@@ -777,13 +781,15 @@ function Chao:setMood(val)
     end
     self.data.mood = val
     -- Update status panel UI
-    self.scene.statusPanel:updateMood()
-    self.scene.statusPanel:updateUI()
+    if skipUpdateUI ~= true then
+        self.scene.statusPanel:updateMood()
+        self.scene.statusPanel:updateUI()
+    end
 end
 
 -- Add a value to mood.
-function Chao:addToMood(val)
-    self:setMood(self.data.mood + val)
+function Chao:addToMood(val, skipUpdateUI)
+    self:setMood(self.data.mood + val, skipUpdateUI)
 end
 
 -- Update timestamp of last time mood was boosted.
@@ -958,20 +964,23 @@ end
 -- --------------------------------------------------------------------------------
 
 -- Set belly value. Ensure value is between 0 and 100.
-function Chao:setBelly(val)
+-- Set skipUpdateUI to true if you don't want to update UI yet.
+function Chao:setBelly(val, skipUpdateUI)
     if val < 0 then
         val = 0
     elseif val > 100 then
         val = 100
     end
     -- Update status panel UI
-    self.scene.statusPanel:updateBelly()
-    self.scene.statusPanel:updateUI()
+    if skipUpdateUI ~= true then
+        self.scene.statusPanel:updateBelly()
+        self.scene.statusPanel:updateUI()
+    end
 end
 
 -- Add a value to belly.
-function Chao:addToBelly(val)
-    self:setBelly(self.data.belly + val)
+function Chao:addToBelly(val, skipUpdateUI)
+    self:setBelly(self.data.belly + val, skipUpdateUI)
 end
 
 -- TODO: drain logic, is belly full
@@ -1042,10 +1051,12 @@ function Chao:addStatsFromItem()
     local attributes = self.item.attributes
     -- Mood/belly
     if type(attributes.mood) == 'number' then
-        self:addToMood(10 * attributes.mood)
+        self:addToMood(10 * attributes.mood, true)
+        self:restartMoodDrainTimer()
     end
     if type(attributes.belly) == 'number' then
-        self:addToBelly(10 * attributes.belly)
+        self:addToBelly(10 * attributes.belly, true)
+        -- TODO: restart belly drain
     end
     -- Stat progress
     local levelUp = false
@@ -1053,10 +1064,16 @@ function Chao:addStatsFromItem()
         local statIndex = kStatIndexes[i]
         if attributes[statIndex] ~= nil then
             if type(attributes[statIndex]) == 'number' then
-                levelUp = levelUp or self:addToStatProgress(statIndex, 10 * attributes[statIndex])
+                levelUp = levelUp or self:addToStatProgress(statIndex, 10 * attributes[statIndex], true)
             end
         end
     end
+
+    -- Update UI
+    self.scene.statusPanel:updateMood()
+    self.scene.statusPanel:updateBelly()
+    self.scene.statusPanel:updateStats()
+    self.scene.statusPanel:updateUI(levelUp)
 
     return levelUp
 end

@@ -53,6 +53,12 @@ local kMoodBoostCooldown <const> = 10
 -- TODO: Once weeds are implemented, maybe decrease duration proportionally to weeds?
 local kMoodDrainTimerDuration <const> = 45
 -- -------------------------------------------------------------------------------
+-- Belly
+-- -------------------------------------------------------------------------------
+-- Duration in seconds of belly drain timer
+-- TODO: Decrease? Or scale drain duration/value based on current state?
+local kBellyDrainTimerDuration <const> = 45
+-- -------------------------------------------------------------------------------
 -- Stat indexes
 -- -------------------------------------------------------------------------------
 local kStatIndexes <const> = {
@@ -421,7 +427,8 @@ function Chao:init(gardenScene, startX, startY)
     -- --------------------------------------------------------------------------------
     -- Belly
     -- --------------------------------------------------------------------------------
-    -- TODO: drain timer
+    -- Initialize self.bellyDrainTimer.
+    self:initializeBellyDrainTimer()
     -- ================================================================================
     -- State
     -- ================================================================================
@@ -536,8 +543,6 @@ end
 -- Set skipUpdateUI to true if you don't want to update UI yet.
 -- Returns true if stat leveled up.
 function Chao:addToStatProgress(statIndex, addProgress, skipUpdateUI)
-    -- TODO: make sure this updates properly, I think it should cuz it's just a pointer right?
-    -- TODO: handle negative
     local statData = self.data.stats[statIndex]
     local newProgress = statData.progress + addProgress
     local levelUp = newProgress >= 100
@@ -971,6 +976,7 @@ function Chao:setBelly(val, skipUpdateUI)
     elseif val > 100 then
         val = 100
     end
+    self.data.belly = val
     -- Update status panel UI
     if skipUpdateUI ~= true then
         self.scene.statusPanel:updateBelly()
@@ -983,7 +989,52 @@ function Chao:addToBelly(val, skipUpdateUI)
     self:setBelly(self.data.belly + val, skipUpdateUI)
 end
 
--- TODO: drain logic, is belly full
+-- Drain belly by 10%.
+function Chao:drainBelly()
+    if self.data.belly > 0 then
+        self:addToBelly(-10)
+    end
+end
+
+-- Returns true if belly is full.
+function Chao:isBellyFull()
+    return self.data.belly >= 100
+end
+
+-- Initialize belly drain timer.
+function Chao:initializeBellyDrainTimer()
+    self.bellyDrainTimer = pd.timer.new(kBellyDrainTimerDuration * 1000, function ()
+        DEBUG_MANAGER:vPrint('Chao: Belly drain timer ended, draining belly and restarting timer.')
+        -- Drain belly
+        self:drainBelly()
+        -- Restart timer
+        self:restartBellyDrainTimer()
+    end)
+    self.bellyDrainTimer.repeats = true
+end
+
+function Chao:pauseBellyDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Pausing belly drain timer.')
+    self.bellyDrainTimer:pause()
+end
+
+function Chao:playBellyDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Starting belly drain timer.')
+    self.bellyDrainTimer:start()
+end
+
+function Chao:restartBellyDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Restarting belly drain timer.')
+    self.bellyDrainTimer:reset()
+    self.bellyDrainTimer:start()
+end
+
+-- NOTE: Not sure if this will ever get used, but might as well add it for completeness.
+-- If this does get implemented, make sure to add nil checks to above functions.
+function Chao:removeBellyDrainTimer()
+    DEBUG_MANAGER:vPrint('Chao: Removing belly drain timer.')
+    self.bellyDrainTimer:remove()
+end
 
 -- --------------------------------------------------------------------------------
 -- Item Holding Functions
@@ -998,7 +1049,7 @@ end
 function Chao:giveItem(item)
     self.item = item
     if item.isEdible then
-        -- TODO: check if belly too full, drop item, play animation
+        -- TODO: check if belly too full, drop item (in valid spot, updating last valid), play animation
         self:setState(kEatingState)
         DEBUG_MANAGER:vPrint('Chao: given edible item.')
     end
@@ -1056,7 +1107,7 @@ function Chao:addStatsFromItem()
     end
     if type(attributes.belly) == 'number' then
         self:addToBelly(10 * attributes.belly, true)
-        -- TODO: restart belly drain
+        self:restartBellyDrainTimer()
     end
     -- Stat progress
     local levelUp = false

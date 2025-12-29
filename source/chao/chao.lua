@@ -265,14 +265,17 @@ class('ChaoEatingState', {
 
 function ChaoEatingState:enter()
     self.chao:eat()
-    pd.timer.performAfterDelay(2000, function ()
+    local eatingDuration = 2000
+    pd.timer.performAfterDelay(eatingDuration, function ()
         self.chao:setState(kIdle)
     end)
+    -- Shrinking animation for item
+    self.itemAnimator = gfx.animator.new(eatingDuration, 1.0, 0.0)
 end
 
 function ChaoEatingState:update()
     self.chao:setImageFromEatingAnimation()
-    -- TODO: shrink item?
+    self.chao.item:setScale(self.itemAnimator:currentValue())
 end
 
 function ChaoEatingState:exit()
@@ -941,8 +944,7 @@ end
 
 -- Update and play eating animation, play eating sound, move item.
 function Chao:eat()
-    -- TODO: do this relative to cursor position
-    local direction = self:angleToLeftOrRight()
+    local direction = self.item.x < self.x and kLeft or kRight
     self:updateEatingAnimation(direction)
     self:moveItemForEatingAnimation(direction)
     self:playEatingAnimation()

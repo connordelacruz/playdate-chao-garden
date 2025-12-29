@@ -90,7 +90,7 @@ function StatusPanel:init(panelWidth, cursor)
     -- Register listener for when ring value updates
     RING_MASTER:registerRingListener('status-panel', function ()
         self:updateRings()
-        self:updateUI()
+        self:updateUI(true)
     end)
     -- TODO: removeRingListener() on StatusPanel:remove() !!!!!
 

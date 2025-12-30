@@ -77,6 +77,7 @@ local kWalkingState <const> = 'walking'
 local kPettingState <const> = 'pet'
 local kMoodBoostState <const> = 'mood-boost'
 local kEatingState <const> = 'eating'
+local kShakingHeadState <const> = 'shaking-head'
 
 -- --------------------------------------------------------------------------------
 -- Generic with common constructor and default props
@@ -278,6 +279,7 @@ class('ChaoEatingState', {
 function ChaoEatingState:enter()
     self.chao:eat()
     local eatingDuration = 2000
+    -- TODO: self.timer, remove on exit() (consistency and all that)
     pd.timer.performAfterDelay(eatingDuration, function ()
         self.chao:setState(kIdle)
     end)
@@ -295,14 +297,46 @@ function ChaoEatingState:exit()
     self.chao:removeItem()
 end
 
+-- --------------------------------------------------------------------------------
+-- Shaking Head (Too Full):
+-- - Face downward
+-- - Play animation for a duration
+-- - Transition to idle state TODO: or pick random state?
+-- --------------------------------------------------------------------------------
+class('ChaoShakingHeadState', {
+    canPet = false,
+    canAcceptItems = false,
+}).extends('ChaoState')
+
+function ChaoShakingHeadState:enter()
+    self.chao:setAngle(270)
+    self.chao:playShakingHeadAnimation()
+    self.timer = pd.timer.new(1000, function ()
+        self.chao:setState(kIdleState)
+    end)
+end
+
+function ChaoShakingHeadState:update()
+    self.chao:setImageFromShakingHeadAnimation()
+end
+
+function ChaoShakingHeadState:exit()
+    if self.timer ~= nil then
+        self.timer:remove()
+    end
+    self.chao:pauseShakingHeadAnimation()
+end
+
 -- ===============================================================================
 -- Chao Sprite Class
 -- ===============================================================================
 class('Chao').extends('FSMSprite')
 
-function Chao:init(gardenScene, startX, startY)
+function Chao:init(gardenScene, gardenCenterX, gardenCenterY)
     Chao.super.init(self)
     self.scene = gardenScene
+    self.gardenCenterX = gardenCenterX
+    self.gardenCenterY = gardenCenterY
     -- ================================================================================
     -- Data and Stats
     -- ================================================================================
@@ -385,6 +419,13 @@ function Chao:init(gardenScene, startX, startY)
     self.eatingLoop = nil
     self:initializeEatingAnimation()
     -- --------------------------------------------------------------------------------
+    -- Shaking Head
+    -- --------------------------------------------------------------------------------
+    self.shakingHeadSpritesheet = gfx.imagetable.new('images/chao/chao-no')
+    -- Animation loop for shaking head.
+    self.shakingHeadLoop = nil
+    self:initializeShakingHeadAnimation()
+    -- --------------------------------------------------------------------------------
     -- Default image 
     -- --------------------------------------------------------------------------------
     self.defaultImage = self:walkIdleSpritesheetImage(kDown, kIdle)
@@ -438,6 +479,7 @@ function Chao:init(gardenScene, startX, startY)
         [kPettingState] = ChaoPettingState(self),
         [kMoodBoostState] = ChaoMoodBoostState(self),
         [kEatingState] = ChaoEatingState(self),
+        [kShakingHeadState] = ChaoShakingHeadState(self),
     }
     self:setInitialState(kIdleState)
     -- When game starts, explicitly set duration of idle state
@@ -445,7 +487,7 @@ function Chao:init(gardenScene, startX, startY)
     -- ================================================================================
     -- Initialization
     -- ================================================================================
-    self:moveTo(startX, startY)
+    self:moveTo(self.gardenCenterX, self.gardenCenterY)
     self:setZIndex(Z_INDEX.GARDEN_CHAO)
     self:add()
 end
@@ -1045,13 +1087,19 @@ function Chao:canAcceptItems()
     return self.state.canAcceptItems
 end
 
--- Set self.item and switch states based on item type.
+-- Set self.item and switch states based on item type and chao conditions.
 function Chao:giveItem(item)
     self.item = item
     if item.isEdible then
-        -- TODO: check if belly too full, drop item (in valid spot, updating last valid), play animation
-        self:setState(kEatingState)
         DEBUG_MANAGER:vPrint('Chao: given edible item.')
+        if self:isBellyFull() then
+            DEBUG_MANAGER:vPrint('Belly full, cannot eat.', 1)
+            -- Shake head and "drop" if too full to eat.
+            self.item = nil
+            self:setState(kShakingHeadState)
+        else
+            self:setState(kEatingState)
+        end
     end
     -- TODO: implement interactive items that aren't food + fallback for possible edge cases?
 end
@@ -1059,6 +1107,11 @@ end
 -- Remove current item.
 function Chao:removeItem()
     self.item:delete()
+    self.item = nil
+end
+
+-- Unset reference to item.
+function Chao:unsetItem()
     self.item = nil
 end
 
@@ -1164,4 +1217,35 @@ end
 -- Play boost sound 3 times
 function Chao:playEatingSound()
     kSounds.boost:play(3)
+end
+
+-- --------------------------------------------------------------------------------
+-- Shaking Head (Too Full) Animation Functions
+-- --------------------------------------------------------------------------------
+
+-- TODO: Sound effect?
+
+-- Initialize self.shakingHeadLoop.
+function Chao:initializeShakingHeadAnimation()
+    -- Insert forward-facing frame between shakes
+    local shakingHeadFrames = {
+        self.shakingHeadSpritesheet[1],
+        self.shakingHeadSpritesheet[2],
+        self.shakingHeadSpritesheet[1],
+        self.shakingHeadSpritesheet[3],
+    }
+    self.shakingHeadLoop = gfx.animation.loop.new(250, shakingHeadFrames, true)
+    self.shakingHeadLoop.paused = true
+end
+
+function Chao:playShakingHeadAnimation()
+    self.shakingHeadLoop.paused = false
+end
+
+function Chao:pauseShakingHeadAnimation()
+    self.shakingHeadLoop.paused = true
+end
+
+function Chao:setImageFromShakingHeadAnimation()
+    self:setImage(self.shakingHeadLoop:image())
 end

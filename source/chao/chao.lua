@@ -1092,7 +1092,7 @@ function Chao:giveItem(item)
     self.item = item
     if item.isEdible then
         DEBUG_MANAGER:vPrint('Chao: given edible item.')
-        if self:isBellyFull() then
+        if self:isBellyFull() and item.attributes.belly > 0 then
             DEBUG_MANAGER:vPrint('Belly full, cannot eat.', 1)
             -- Shake head and "drop" if too full to eat.
             self.item = nil

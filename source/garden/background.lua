@@ -12,7 +12,7 @@ function GardenBackground:init()
     self:setImage(bgImage)
 
     -- Display below all other sprites
-    self:setZIndex(Z_INDEX.BOTTOM)
+    self:setZIndex(Z_INDEX.BACKGROUND)
 
     -- To make things easy, set center to bottom right corner
     self:setCenter(1.0, 1.0)

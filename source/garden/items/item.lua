@@ -26,8 +26,7 @@ function Item:init(x, y, itemManager)
     end
 
     self:moveTo(x, y)
-    -- TODO: z index for grabbed item
-    self:setZIndex(Z_INDEX.GARDEN_ITEM)
+    self:updateZIndex()
 end
 
 function Item:setManagerIndex(index)
@@ -51,6 +50,15 @@ end
 
 function Item:click(cursor)
     cursor:grabItem(self)
+end
+
+-- Set Z-index based on whether item is currently being grabbed
+function Item:updateZIndex(isGrabbed)
+    if isGrabbed then
+        self:setZIndex(Z_INDEX.GARDEN_ITEM_GRABBED)
+    else
+        self:setZIndex(Z_INDEX.GARDEN_ITEM)
+    end
 end
 
 -- ================================================================================

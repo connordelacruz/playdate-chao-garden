@@ -189,7 +189,7 @@ function ShopPanel:init(itemManager, shopButton)
     -- Move to right side of the screen
     self:moveTo(SCREEN_WIDTH, 0)
     -- Display over other elements
-    self:setZIndex(Z_INDEX.UI_LAYER_3)
+    self:setZIndex(Z_INDEX.UI_LAYER_1)
 end
 
 -- --------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ function ShopPanel:createCursor()
     -- Center on right side, middle point
     self.cursorSprite:setCenter(1, 0.5)
     -- Display on top
-    self.cursorSprite:setZIndex(Z_INDEX.TOP)
+    self.cursorSprite:setZIndex(Z_INDEX.CURSOR)
 end
 
 -- --------------------------------------------------------------------------------

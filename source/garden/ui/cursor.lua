@@ -97,6 +97,8 @@ function CursorGrabbingState:enter()
     -- Cursor may be colliding with rects with tags added above.
     -- Call this to line it up with the target item first.
     self.cursor:setInitialGrabPosition()
+    -- Update z-index of grabbed item
+    self.cursor.item:updateZIndex(true)
 end
 
 function CursorGrabbingState:update()
@@ -113,6 +115,7 @@ function CursorGrabbingState:exit()
     -- TODO: is this a problem when feeding Chao?
     -- Update last valid coordinates of item and set cursor.item to nil
     self.cursor.item:updateLastValidCoordinates()
+    self.cursor.item:updateZIndex(false)
     self.cursor.item = nil
 end
 
@@ -155,7 +158,7 @@ function Cursor:init(startX, startY)
     -- Speed of the cursor when moving (px / sec)
     self.speed = 250
     -- Cursor should appear above most sprites
-    self:setZIndex(Z_INDEX.TOP)
+    self:setZIndex(Z_INDEX.CURSOR)
     -- --------------------------------------------------------------------------------
     -- Instance Variables
     -- --------------------------------------------------------------------------------
@@ -315,7 +318,6 @@ end
 
 -- Place item, handle logic for giving interactable items to Chao.
 function Cursor:placeItem()
-    -- TODO: also make sure we're placing it in a valid spot, check garden bounds or whatever
     -- If this is an item Chao can take, and Chao is within the collision bounds, give it to the Chao
     if self.item.chaoCanTake then
         local chaoUnderCursorAndCanAcceptItems, chao = self:isChaoUnderCursorAndCanAcceptItems()

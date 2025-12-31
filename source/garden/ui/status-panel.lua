@@ -574,8 +574,7 @@ function EditNameTextInput:init(inputText, width)
 
     self:setCenter(0, 0.5)
     self:moveTo(0, SCREEN_CENTER_Y)
-    -- TODO: make z index ui_overlay
-    self:setZIndex(Z_INDEX.TOP)
+    self:setZIndex(Z_INDEX.UI_OVERLAY)
 end
 
 function EditNameTextInput:renderUI()

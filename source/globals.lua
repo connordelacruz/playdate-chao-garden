@@ -40,28 +40,30 @@ end
 -- --------------------------------------------------------------------------------
 -- Z-Index Levels
 -- --------------------------------------------------------------------------------
--- TODO: be more consistent with the usages of these!
 Z_INDEX = {
-    -- Absolute min/max supported
+    -- Absolute min/max supported (for extreme cases, like scene transition overlays)
     MIN = -32768,
     MAX = 32767,
-    -- Functionally top and bottom for our purposes
-    BOTTOM = -1,
-    TOP = 9999,
+    -- Background image
+    BACKGROUND = -1,
+    -- Shadows TODO: implement
+    SHADOW = 1,
+    -- Gameboy
+    GARDEN_GB = 3,
+    -- Items
+    GARDEN_ITEM = 5,
+    -- Chao
+    GARDEN_CHAO = 100,
     -- UI, should appear over most things
     UI_LAYER_1 = 1000,
     UI_LAYER_2 = 1100,
     UI_LAYER_3 = 1200,
-    -- Chao
-    GARDEN_CHAO = 99,
-    -- TODO: Chao's shadow TODO: maybe appear below items n stuff
-    GARDEN_CHAO_SHADOW = 98,
-    -- Items
-    GARDEN_ITEM = 5,
-    -- Items being grabbed by cursor TODO: implement
-    GARDEN_ITEM_GRABBED = 500,
-    -- TODO: figure out better value:
-    GARDEN_GB = 1,
+    -- Items being grabbed by cursor
+    GARDEN_ITEM_GRABBED = 9998,
+    -- Cursors
+    CURSOR = 9999,
+    -- Overlays
+    UI_OVERLAY = 10000,
 }
 
 -- --------------------------------------------------------------------------------

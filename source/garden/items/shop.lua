@@ -19,10 +19,14 @@ local kSounds <const> = {
     click = pd.sound.sampleplayer.new('sounds/ui/select.wav'),
     cancel = pd.sound.sampleplayer.new('sounds/ui/cancel.wav'),
     nope = pd.sound.sampleplayer.new('sounds/ui/nope.wav'),
+    purchase = pd.sound.sampleplayer.new('sounds/ui/purchase.wav'),
 }
 -- These samples are loud, so decrease volume of each
-for _,s in pairs(kSounds) do
-    s:setVolume(0.8)
+-- TODO: this is messy, just edit the sound files dummy
+for k,s in pairs(kSounds) do
+    if k ~= 'purchase' then
+        s:setVolume(0.8)
+    end
 end
 
 -- --------------------------------------------------------------------------------
@@ -132,7 +136,7 @@ function ShopButton:closeShopPanelAfterPurchase(item)
     -- Cursor should ignore A press from purchase, otherwise it drops the item right away.
     -- Wait 1 frame before updating cursor state
     pd.frameTimer.performAfterDelay(1, function ()
-        self.cursor:grabItem(item)
+        self.cursor:grabItem(item, false)
         self:setState(kClosedState)
     end)
 end
@@ -303,7 +307,7 @@ function ShopPanel:handleClick()
         if canPurchase then
             DEBUG_MANAGER:vPrint(itemProps.className .. ' purchased, closing shop panel', 1)
             local item = self:purchaseItem(itemProps)
-            kSounds.click:play()
+            kSounds.purchase:play()
             -- Pass new item to shop button and let it handle giving it to cursor
             self.shopButton:closeShopPanelAfterPurchase(item)
         else

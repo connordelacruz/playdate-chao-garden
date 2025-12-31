@@ -4,6 +4,9 @@ local gfx <const> = pd.graphics
 -- ================================================================================
 -- Constants
 -- ================================================================================
+-- --------------------------------------------------------------------------------
+-- Collisions
+-- --------------------------------------------------------------------------------
 -- Collision tags of sprites that can be clicked
 local kClickableTags <const> = {
     TAGS.CHAO,
@@ -19,6 +22,13 @@ local kGrabbingCollidesWithTags <const> = {
     TAGS.SCREEN_BOUNDARY,
     TAGS.GARDEN_BOUNDARY,
     TAGS.POND,
+}
+-- --------------------------------------------------------------------------------
+-- Sounds
+-- --------------------------------------------------------------------------------
+local kSounds <const> = {
+    grab = pd.sound.sampleplayer.new('sounds/cursor/grab.wav'),
+    drop = pd.sound.sampleplayer.new('sounds/cursor/drop.wav'),
 }
 
 -- ================================================================================
@@ -112,7 +122,6 @@ function CursorGrabbingState:update()
 end
 
 function CursorGrabbingState:exit()
-    -- TODO: is this a problem when feeding Chao?
     -- Update last valid coordinates of item and set cursor.item to nil
     self.cursor.item:updateLastValidCoordinates()
     self.cursor.item:updateZIndex(false)
@@ -274,9 +283,12 @@ function Cursor:enable()
     self:setState(kActiveState)
 end
 
-function Cursor:grabItem(item)
+function Cursor:grabItem(item, playGrabSound)
     self.item = item
     self:setState(kGrabbingState)
+    if playGrabSound ~= false then
+        kSounds.grab:play()
+    end
 end
 
 -- Check whether cursor is free to do other things in its current state
@@ -319,12 +331,18 @@ end
 -- Place item, handle logic for giving interactable items to Chao.
 function Cursor:placeItem()
     -- If this is an item Chao can take, and Chao is within the collision bounds, give it to the Chao
+    local gaveChaoItem = false
     if self.item.chaoCanTake then
         local chaoUnderCursorAndCanAcceptItems, chao = self:isChaoUnderCursorAndCanAcceptItems()
         if chaoUnderCursorAndCanAcceptItems and chao ~= nil then
             DEBUG_MANAGER:vPrint('Cursor: Chao under cursor and can accept items')
             chao:giveItem(self.item)
+            gaveChaoItem = true
         end
+    end
+    -- Play drop sound if we're just setting item down
+    if not gaveChaoItem then
+        kSounds.drop:play()
     end
 
     self:setState(kActiveState)

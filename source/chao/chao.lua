@@ -17,6 +17,7 @@ local kSounds <const> = {
     step = pd.sound.sampleplayer.new('sounds/chao/step.wav'),
     pet = pd.sound.sampleplayer.new('sounds/chao/pet.wav'),
     boost = pd.sound.sampleplayer.new('sounds/chao/boost.wav'),
+    levelUp = pd.sound.sampleplayer.new('sounds/chao/level-up.wav'),
 }
 -- --------------------------------------------------------------------------------
 -- Sprite/Action Stuff
@@ -1094,7 +1095,7 @@ function Chao:giveItem(item)
     self.item = item
     if item.isEdible then
         DEBUG_MANAGER:vPrint('Chao: given edible item.')
-        if self:isBellyFull() and item.attributes.belly > 0 then
+        if self:isBellyFull() and item.attributes.belly > 0 and not DEBUG_MANAGER:isFlagSet(DEBUG_FLAGS.alwaysHungry) then
             DEBUG_MANAGER:vPrint('Belly full, cannot eat.', 1)
             -- Shake head and "drop" if too full to eat.
             self.item = nil
@@ -1128,9 +1129,12 @@ function Chao:eat()
     self:moveItemForEatingAnimation(direction)
     self:playEatingAnimation()
     self:playEatingSound()
-    -- TODO: figure out level up sound
     -- TODO: use animator to increment stats in chunks??
     local levelUp = self:addStatsFromItem()
+    -- TODO: wait til eat sound is complete before playing this?
+    if levelUp then
+        kSounds.levelUp:play()
+    end
 end
 
 -- Move self.item to a position for eating animation based on direction.

@@ -11,6 +11,7 @@ local kDebugOptions <const> = {
     'skipTitle',
     -- Rings
     'crankToSetRings',
+    'allItemsAreFree',
     -- Cursor
     'printCursorCoordinates',
     -- Items
@@ -19,6 +20,7 @@ local kDebugOptions <const> = {
     -- Chao
     'skipLoadingChaoData',
     'skipSavingChaoData',
+    'alwaysHungry',
 }
 -- Bit masks generated from above options
 local function generateDebugMasks()

@@ -367,6 +367,10 @@ end
 -- Creates an item UI to add to the shop list
 function ShopPanel:createItemUI(tabIndex, className, itemImage, cost)
     local imageUI = image(itemImage)
+    -- DEBUG: Everything is free
+    if DEBUG_MANAGER:isFlagSet(DEBUG_FLAGS.allItemsAreFree) then
+        cost = 0
+    end
     local costText = text(tostring(cost))
 
     return box({

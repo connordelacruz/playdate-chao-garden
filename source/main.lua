@@ -57,6 +57,9 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 -- !!!! NOTE !!!!: enableDebugUpdateFunctions must also be enabled!
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.crankToSetRings)
 
+-- All shop items cost 0 rings.
+-- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.allItemsAreFree)
+
 -- --------------------------------------------------------------------------------
 -- Cursor
 -- --------------------------------------------------------------------------------
@@ -82,6 +85,9 @@ DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipTitle)
 
 -- Don't save Chao data wherever Chao:saveData() would be called.
 -- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.skipSavingChaoData)
+
+-- Chao can always eat, even when full.
+-- DEBUG_MANAGER:setFlag(DEBUG_FLAGS.alwaysHungry)
 
 -- ===============================================================================
 -- Save/Load Data

@@ -98,6 +98,8 @@ function StatusPanel:init(panelWidth, cursor)
     -- Image
     -- --------------------------------------------------------------------------------
     self.panelWidth = panelWidth
+    -- Content width (panel - padding)
+    self.contentWidth = self.panelWidth - (STYLE_ROOT_PANEL.paddingLeft + STYLE_ROOT_PANEL.paddingRight)
     -- Setup Playout elements for UI
     self:initializeUI()
     -- Draw from top left corner
@@ -227,8 +229,6 @@ function StatusPanel:createOrUpdateEditNameClickTarget()
         self.editNameClickTarget = EditNameClickTarget(self)
     else
         self.editNameClickTarget.chao = self.chao
-        -- TODO: just calculate rect size once!! No sense in doing anything but the largest
-        self.editNameClickTarget:updateRect()
     end
 end
 
@@ -388,8 +388,7 @@ end
 -- Initialize images for progress bar chunks. Must be called before accessing self.progressBarImages.
 -- NOTE: relies on self.panelWidth for sizing.
 function StatusPanel:initializeProgressBarImages()
-    -- Calculate full bar width (panel size - padding)
-    local fullBarWidth <const> = self.panelWidth - (STYLE_ROOT_PANEL.paddingLeft + STYLE_ROOT_PANEL.paddingRight)
+    local fullBarWidth <const> = self.contentWidth
     -- Progress chunk width is 1/10 of the full bar
     local progressChunkWidth <const> = fullBarWidth // 10
     -- Initialize filled and empty progress bar chunk images
@@ -493,49 +492,30 @@ function EditNameClickTarget:init(statusPanel)
 
     self.statusPanel = statusPanel
     self.chao = statusPanel.chao
-    self.nameContainer = statusPanel.nameContainer
     self.cursor = statusPanel.cursor
 
-    -- Rect size/stroke stuff
-    self.stroke = 2
-    self.borderRadius = 4
-    self.hPadding = self.stroke + 2
-    self.vPadding = self.stroke
-    self:updateRect()
-
+    -- Image
+    local width = self.statusPanel.contentWidth
+    local height = kFonts.name:getHeight() + 4
+    self:setSize(width, height)
+    self:moveTo(statusPanel.nameContainer.rect:centerPoint())
+    local img = gfx.image.new(width, height)
+    gfx.pushContext(img)
+        gfx.setLineWidth(2)
+        gfx.setStrokeLocation(gfx.kStrokeInside)
+        gfx.drawRoundRect(0, 0, width, height, 4)
+    gfx.popContext()
+    self:setImage(img)
     -- Collisions
+    self:setCollideRect(0, 0, width, height)
     self.collisionResponse = gfx.sprite.kCollisionTypeOverlap
     self:setTag(TAGS.CLICK_TARGET)
-
     -- Set Z-index to a high value, but not as high as the cursor
     self:setZIndex(Z_INDEX.UI_LAYER_2)
     -- Invisible by default
     self:setVisible(false)
 
     self:add()
-end
-
--- TODO: just precalculate this rect, don't bother resizing it!!!
-function EditNameClickTarget:updateRect()
-    local nameContainerRect = self.nameContainer.rect
-    local hPaddingAdding = 2 * self.hPadding
-    local vPaddingAdding = 2 * self.vPadding
-    self:setSize(nameContainerRect.width + hPaddingAdding,
-                 nameContainerRect.height + vPaddingAdding)
-    self:moveTo(nameContainerRect:centerPoint())
-    self:updateHoverImage()
-end
-
-function EditNameClickTarget:updateHoverImage()
-    local w,h = self:getSize()
-    local img = gfx.image.new(w, h)
-    gfx.pushContext(img)
-        gfx.setLineWidth(self.stroke)
-        gfx.setStrokeLocation(gfx.kStrokeInside)
-        gfx.drawRoundRect(0, 0, w, h, self.borderRadius)
-    gfx.popContext()
-    self:setImage(img)
-    self:setCollideRect(0, 0, w, h)
 end
 
 function EditNameClickTarget:click(cursor)
@@ -594,6 +574,7 @@ function EditNameTextInput:init(inputText, width)
 
     self:setCenter(0, 0.5)
     self:moveTo(0, SCREEN_CENTER_Y)
+    -- TODO: make z index ui_overlay
     self:setZIndex(Z_INDEX.TOP)
 end
 

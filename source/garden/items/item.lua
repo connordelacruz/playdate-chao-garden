@@ -26,6 +26,7 @@ function Item:init(x, y, itemManager)
     end
 
     self:moveTo(x, y)
+    -- TODO: z index for grabbed item
     self:setZIndex(Z_INDEX.GARDEN_ITEM)
 end
 

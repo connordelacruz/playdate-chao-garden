@@ -32,12 +32,12 @@ function GardenScene:init()
     self.shopButton = ShopButton(self.cursor, self.itemManager)
     -- Minigame Gameboys
     -- TODO: prob just 1, scale it up, transition to scene with list of games
-    local gb1 = Gameboy(SCREEN_WIDTH - 32, 16)
-    local gb2 = Gameboy(gb1.x - gb1.width, 16)
-    self.gameboys = {
-        gb1,
-        gb2,
-    }
+    self.gb = Gameboy(SCREEN_WIDTH - 24, 16)
+    -- local gb2 = Gameboy(gb1.x - gb1.width, 16)
+    -- self.gameboys = {
+    --     gb1,
+    --     gb2,
+    -- }
 
     -- Boundary collisions
     self:createBoundaries()

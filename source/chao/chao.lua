@@ -140,6 +140,8 @@ end
 -- - Change states after a period of time
 -- --------------------------------------------------------------------------------
 class('ChaoIdleState', {
+    minDuration = 1.5,
+    maxDuration = 3.5,
     nextStateOptions = {
         kWalkingState,
     },

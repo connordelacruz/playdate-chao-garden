@@ -40,16 +40,27 @@ end
 -- --------------------------------------------------------------------------------
 -- Z-Index Levels
 -- --------------------------------------------------------------------------------
+-- TODO: be more consistent with the usages of these!
 Z_INDEX = {
-    BOTTOM = -1,
-    TOP = 999,
+    -- Absolute min/max supported
     MIN = -32768,
     MAX = 32767,
-    UI_LAYER_1 = 100,
-    UI_LAYER_2 = 200,
-    UI_LAYER_3 = 300,
+    -- Functionally top and bottom for our purposes
+    BOTTOM = -1,
+    TOP = 9999,
+    -- UI, should appear over most things
+    UI_LAYER_1 = 1000,
+    UI_LAYER_2 = 1100,
+    UI_LAYER_3 = 1200,
+    -- Chao
     GARDEN_CHAO = 99,
+    -- TODO: Chao's shadow TODO: maybe appear below items n stuff
+    GARDEN_CHAO_SHADOW = 98,
+    -- Items
     GARDEN_ITEM = 5,
+    -- Items being grabbed by cursor TODO: implement
+    GARDEN_ITEM_GRABBED = 500,
+    -- TODO: figure out better value:
     GARDEN_GB = 1,
 }
 

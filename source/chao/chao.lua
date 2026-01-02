@@ -338,6 +338,7 @@ class('Chao').extends('FSMSprite')
 function Chao:init(gardenScene, gardenCenterX, gardenCenterY)
     Chao.super.init(self)
     self.scene = gardenScene
+    -- TODO: use these for moving fruit for shake head animation?
     self.gardenCenterX = gardenCenterX
     self.gardenCenterY = gardenCenterY
     -- ================================================================================
@@ -439,6 +440,11 @@ function Chao:init(gardenScene, gardenCenterX, gardenCenterY)
     self:setCollideRect(0, 0, self:getSize())
     self:setTag(TAGS.CHAO)
     -- ================================================================================
+    -- Z-index and Initial Position
+    -- ================================================================================
+    self:moveTo(self.gardenCenterX, self.gardenCenterY)
+    self:setZIndex(Z_INDEX.GARDEN_CHAO)
+    -- ================================================================================
     -- Instance Variables
     -- ================================================================================
     -- --------------------------------------------------------------------------------
@@ -488,10 +494,12 @@ function Chao:init(gardenScene, gardenCenterX, gardenCenterY)
     -- When game starts, explicitly set duration of idle state
     self.state:setDuration(2000)
     -- ================================================================================
-    -- Initialization
+    -- Decorations
     -- ================================================================================
-    self:moveTo(self.gardenCenterX, self.gardenCenterY)
-    self:setZIndex(Z_INDEX.GARDEN_CHAO)
+    self:initializeShadow()
+    -- ================================================================================
+    -- Add to sprite list
+    -- ================================================================================
     self:add()
 end
 
@@ -1254,4 +1262,56 @@ end
 
 function Chao:setImageFromShakingHeadAnimation()
     self:setImage(self.shakingHeadLoop:image())
+end
+
+-- ================================================================================
+-- Chao Decorations
+-- ================================================================================
+
+-- --------------------------------------------------------------------------------
+-- Shadow
+-- --------------------------------------------------------------------------------
+
+-- Create sprite for Chao's shadow.
+-- Call AFTER initial position is set, but before Chao is added to sprite list.
+function Chao:initializeShadow()
+    local width = self.width - 4
+    local height = self.height / 3
+    local img = gfx.image.new(width, height)
+    gfx.pushContext(img)
+        gfx.setColor(gfx.kColorWhite)
+        gfx.fillEllipseInRect(0, 0, width, height)
+        gfx.setColor(gfx.kColorBlack)
+        gfx.setDitherPattern(0.5, gfx.image.kDitherTypeBayer2x2)
+        gfx.fillEllipseInRect(0, 0, width, height)
+    gfx.popContext()
+    -- Initialize sprite object
+    self.shadow = gfx.sprite.new(img)
+    self.shadow:setZIndex(Z_INDEX.SHADOW)
+    self:updateShadow()
+end
+
+-- Update shadow position.
+-- Call AFTER Chao moves in update loop.
+function Chao:updateShadow()
+    self.shadow:moveTo(self.x, self.y + (self.width / 2) - 1)
+end
+
+-- ================================================================================
+-- Sprite Function Overrides
+-- ================================================================================
+
+function Chao:update()
+    Chao.super.update(self)
+    self:updateShadow()
+end
+
+function Chao:add()
+    Chao.super.add(self)
+    self.shadow:add()
+end
+
+function Chao:remove()
+    Chao.super.remove(self)
+    self.shadow:remove()
 end
